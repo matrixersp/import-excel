@@ -16,3 +16,7 @@ code {
   text-align: center;
   margin: 10px;
 }
+
+.dragging {
+  background-color: #e5e5e5;
+}
