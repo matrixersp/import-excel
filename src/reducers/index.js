@@ -1,12 +1,28 @@
-import { UPLOAD_EXCEL_DATA } from "../constants";
+import { SET_ROWS, SET_COLUMNS } from "../constants";
 
-const initialState = {
+const rowsInitialState = {
   data: null,
 };
 
-export const excelReducer = (state = initialState, action) => {
+export const rowsReducer = (state = rowsInitialState, action) => {
   switch (action.type) {
-    case UPLOAD_EXCEL_DATA:
+    case SET_ROWS:
+      return {
+        ...state,
+        data: action.payload,
+      };
+    default:
+      return state;
+  }
+};
+
+const columnsInitialState = {
+  data: null,
+};
+
+export const columnsReducer = (state = columnsInitialState, action) => {
+  switch (action.type) {
+    case SET_COLUMNS:
       return {
         ...state,
         data: action.payload,

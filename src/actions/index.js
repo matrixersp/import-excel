@@ -1,6 +1,6 @@
-import { UPLOAD_EXCEL_DATA } from "../constants";
+import { SET_ROWS } from "../constants";
 
-export const uploadExcelData = (data) => ({
-  type: UPLOAD_EXCEL_DATA,
+export const setRows = (data) => ({
+  type: SET_ROWS,
   payload: data,
 });

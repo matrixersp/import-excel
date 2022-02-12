@@ -1,1 +1,2 @@
-export const UPLOAD_EXCEL_DATA = "UPLOAD_EXCEL_DATA";
+export const SET_ROWS = "SET_ROWS";
+export const SET_COLUMNS = "SET_COLUMNS";
