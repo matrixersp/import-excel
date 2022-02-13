@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { Button, Box } from "@mui/material";
-import Upload from "./components/Upload";
 import XLSX from "xlsx";
 import * as yup from "yup";
+
+import Upload from "./components/Upload";
+import Match from "./components/Match";
+import Review from "./components/Review";
 
 import { setRows } from "./actions";
 import ValidationErrors from "./components/ValidationErrors";
 import DataGridComponent from "./components/DataGridComponent";
+import StepperComponent from "./components/StepperComponent";
 
 let contactSchema = yup.object().shape({
   id: yup.number().min(1),
@@ -66,7 +70,23 @@ function App() {
 
   return (
     <div className="App">
-      <Upload
+      <StepperComponent
+        steps={[
+          {
+            label: "Upload",
+            component: (
+              <Upload
+                selectedFile={selectedFile}
+                setSelectedFile={setSelectedFile}
+                setSubmitted={setSubmitted}
+              />
+            ),
+          },
+          { label: "Match", component: <Match /> },
+          { label: "Review", component: <Review /> },
+        ]}
+      />
+      {/* <Upload
         selectedFile={selectedFile}
         setSelectedFile={setSelectedFile}
         setSubmitted={setSubmitted}
@@ -82,7 +102,7 @@ function App() {
         <ValidationErrors rows={validationErrors} />
       ) : (
         <DataGridComponent schema={contactSchema} />
-      )}
+      )} */}
     </div>
   );
 }

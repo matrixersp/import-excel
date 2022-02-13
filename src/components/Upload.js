@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import XLSX from "xlsx";
+import { useDispatch } from "react-redux";
+import { setRows } from "../actions/index";
 
 const Input = styled("input")({
   display: "none",
@@ -11,6 +14,8 @@ export default function Upload({
   setSelectedFile,
   setSubmitted,
 }) {
+  const dispatch = useDispatch();
+
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
     setSubmitted(false);
@@ -35,11 +40,35 @@ export default function Upload({
     setSelectedFile(e.dataTransfer.files[0]);
   };
 
+  const submit = async () => {
+    const data = await selectedFile.arrayBuffer();
+    let workbook = XLSX.read(data);
+
+    const names = Object.keys(workbook.Sheets);
+    const selectedRows = names.map((name) =>
+      XLSX.utils.sheet_to_json(workbook.Sheets[name])
+    )[0];
+
+    const rowsWithIds = setRowsIds(selectedRows);
+    dispatch(setRows(rowsWithIds));
+
+    setSubmitted(true);
+  };
+
+  useEffect(() => {
+    if (selectedFile) submit();
+  }, [selectedFile]);
+
+  const setRowsIds = (rows) => {
+    return rows.map((row) => ({ ...row, id: row.__rowNum__ }));
+  };
+
   return (
     <Box
       sx={{
         display: "flex",
         alignItems: "center",
+        mt: 3,
       }}
     >
       <Box
@@ -53,7 +82,7 @@ export default function Upload({
           minWidth: 300,
           width: "100%",
           height: 200,
-          border: "3px dashed #373737",
+          border: "3px dashed #bdbebf",
         }}
       >
         <label htmlFor="contained-button-file" style={{ marginRight: 12 }}>
