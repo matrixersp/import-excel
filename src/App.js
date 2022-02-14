@@ -13,7 +13,7 @@ import ValidationErrors from "./components/ValidationErrors";
 import DataGridComponent from "./components/DataGridComponent";
 import StepperComponent from "./components/StepperComponent";
 
-let contactSchema = yup.object().shape({
+let validationSchema = yup.object().shape({
   id: yup.number().min(1),
   name: yup
     .string()
@@ -31,6 +31,7 @@ function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [canGoToNextStep, setCanGoToNextStep] = useState(false);
 
   const createDataGrid = async () => {
     const data = await selectedFile.arrayBuffer();
@@ -44,7 +45,7 @@ function App() {
     setValidationErrors([]);
     let validRows = selectedRows.map(async (row) => {
       try {
-        await contactSchema.validate(row, { abortEarly: false });
+        await validationSchema.validate(row, { abortEarly: false });
         return true;
       } catch (err) {
         setValidationErrors((validationErrors) => [...validationErrors, err]);
@@ -76,33 +77,21 @@ function App() {
             label: "Upload",
             component: (
               <Upload
+                setCanGoToNextStep={setCanGoToNextStep}
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
                 setSubmitted={setSubmitted}
               />
             ),
           },
-          { label: "Match", component: <Match /> },
+          {
+            label: "Match",
+            component: <Match validationSchema={validationSchema} />,
+          },
           { label: "Review", component: <Review /> },
         ]}
+        canGoToNextStep={canGoToNextStep}
       />
-      {/* <Upload
-        selectedFile={selectedFile}
-        setSelectedFile={setSelectedFile}
-        setSubmitted={setSubmitted}
-      />
-      {selectedFile && !submitted && (
-        <Box sx={{ my: 2 }}>
-          <Button variant="contained" component="span" onClick={createDataGrid}>
-            Create Data Grid
-          </Button>
-        </Box>
-      )}
-      {validationErrors.length > 0 ? (
-        <ValidationErrors rows={validationErrors} />
-      ) : (
-        <DataGridComponent schema={contactSchema} />
-      )} */}
     </div>
   );
 }

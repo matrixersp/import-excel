@@ -8,11 +8,11 @@ import Typography from "@mui/material/Typography";
 
 // const steps = ["Upload", "Match", "Review", "Complete"];
 
-export default function StepperComponent({ steps }) {
+export default function StepperComponent({ steps, canGoToNextStep }) {
   const [activeStep, setActiveStep] = useState(0);
 
   const handleNext = () => {
-    if (activeStep + 1 < steps.length)
+    if (canGoToNextStep && activeStep + 1 < steps.length)
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -63,7 +63,11 @@ export default function StepperComponent({ steps }) {
             </Button>
             <Box sx={{ flex: "1 1 auto" }} />
 
-            <Button onClick={handleNext} variant="contained">
+            <Button
+              onClick={handleNext}
+              variant="contained"
+              disabled={!canGoToNextStep}
+            >
               {activeStep === steps.length - 1 ? "Finish" : "Next"}
             </Button>
           </Box>

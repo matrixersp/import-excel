@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Box, Button } from "@mui/material";
+import { Stack, Box, Divider, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import XLSX from "xlsx";
 import { useDispatch } from "react-redux";
@@ -13,6 +13,7 @@ export default function Upload({
   selectedFile,
   setSelectedFile,
   setSubmitted,
+  setCanGoToNextStep,
 }) {
   const dispatch = useDispatch();
 
@@ -44,62 +45,79 @@ export default function Upload({
     const data = await selectedFile.arrayBuffer();
     let workbook = XLSX.read(data);
 
-    const names = Object.keys(workbook.Sheets);
-    const selectedRows = names.map((name) =>
-      XLSX.utils.sheet_to_json(workbook.Sheets[name])
-    )[0];
+    const sheetName = Object.keys(workbook.Sheets)[0];
+    const selectedRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+      header: "A",
+      defval: "",
+    });
 
-    const rowsWithIds = setRowsIds(selectedRows);
-    dispatch(setRows(rowsWithIds));
-
+    dispatch(setRows(selectedRows));
     setSubmitted(true);
+    setCanGoToNextStep(true);
   };
 
   useEffect(() => {
     if (selectedFile) submit();
   }, [selectedFile]);
 
-  const setRowsIds = (rows) => {
-    return rows.map((row) => ({ ...row, id: row.__rowNum__ }));
-  };
-
   return (
     <Box
       sx={{
         display: "flex",
         alignItems: "center",
+        m: 2,
         mt: 3,
       }}
     >
-      <Box
+      <Stack
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        direction="row"
+        divider={<Divider orientation="vertical" flexItem sx={{ mx: 2.25 }} />}
         sx={{
-          display: "flex",
           alignItems: "center",
-          p: 2,
+          p: 4,
           minWidth: 300,
-          width: "100%",
-          height: 200,
+          minHeight: 180,
           border: "3px dashed #bdbebf",
         }}
       >
-        <label htmlFor="contained-button-file" style={{ marginRight: 12 }}>
-          <Input
-            accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            id="contained-button-file"
-            type="file"
-            onChange={handleFileChange}
-          />
-          <Button variant="contained" component="span">
-            Upload File
-          </Button>
-        </label>
-        {selectedFile
-          ? `"${selectedFile?.name}" selected.`
-          : "Drop an XLSX file here."}
-      </Box>
+        <Box sx={{ flex: "1 0 30%" }}>
+          <label htmlFor="contained-button-file" style={{ marginRight: 12 }}>
+            <Input
+              accept=".csv, text/plain, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+              id="contained-button-file"
+              type="file"
+              onChange={handleFileChange}
+            />
+            <Button
+              variant="contained"
+              component="span"
+              sx={{ textTransform: "initial" }}
+            >
+              Upload data from file
+            </Button>
+          </label>
+          <Typography variant="body2" sx={{ color: "text.primary", mt: 1.25 }}>
+            {selectedFile
+              ? `"${selectedFile?.name}" selected.`
+              : ".csv, .tsv, .txt spreadsheets accepted."}
+          </Typography>
+        </Box>
+        <Box sx={{ flex: "1 0 65%" }}>
+          <Typography
+            variant="body2"
+            sx={{ color: "text.secondary", textAlign: "justify" }}
+          >
+            You can upload any .csv, .tsv, .txt file with any set of columns as
+            long as it has 1 record per row. The next step will allow you to
+            match your spreadsheet columns to the right data points. You'll be
+            able to clean up or remove any corrupted data before finalizing your
+            report.
+          </Typography>
+        </Box>
+      </Stack>
     </Box>
   );
 }
