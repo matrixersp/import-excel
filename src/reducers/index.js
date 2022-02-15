@@ -1,33 +1,12 @@
-import { SET_ROWS, SET_COLUMNS } from "../constants";
+import { combineReducers } from "redux";
+import appReducer from "./appReducer";
 
-const rowsInitialState = {
-  data: null,
+const combinedReducer = combineReducers({
+  appReducer,
+});
+
+const rootReducer = (state, action) => {
+  return combinedReducer(state, action);
 };
 
-export const rowsReducer = (state = rowsInitialState, action) => {
-  switch (action.type) {
-    case SET_ROWS:
-      return {
-        ...state,
-        data: action.payload,
-      };
-    default:
-      return state;
-  }
-};
-
-const columnsInitialState = {
-  data: null,
-};
-
-export const columnsReducer = (state = columnsInitialState, action) => {
-  switch (action.type) {
-    case SET_COLUMNS:
-      return {
-        ...state,
-        data: action.payload,
-      };
-    default:
-      return state;
-  }
-};
+export default rootReducer;

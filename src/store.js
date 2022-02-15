@@ -1,11 +1,5 @@
-import { createStore, combineReducers } from "redux";
-import { rowsReducer } from "./reducers";
-import { columnsReducer } from "./reducers";
-
-const allReducers = combineReducers({
-  rowsReducer,
-  columnsReducer,
-});
+import { createStore } from "redux";
+import rootReducer from "./reducers";
 
 const columns: GridColDef[] = [
   { field: "id", hide: true },
@@ -14,9 +8,9 @@ const columns: GridColDef[] = [
 ];
 
 export const store = createStore(
-  allReducers,
+  rootReducer,
   {
-    columnsReducer: { data: columns },
+    appReducer: { validHeaders: columns, ignoredColumns: [] },
   },
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );
