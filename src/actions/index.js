@@ -1,8 +1,8 @@
 import { appConstants } from "../constants";
 
-export const setRows = (data) => ({
+export const setRows = (rows) => ({
   type: appConstants.SET_ROWS,
-  payload: data,
+  payload: rows,
 });
 
 export const setHeader = (headerName, columnLabel) => ({
@@ -18,4 +18,14 @@ export const ignoreColumn = (columnLabel) => ({
 export const reconsiderColumn = (columnLabel) => ({
   type: appConstants.RECONSIDER_COLUMN,
   payload: columnLabel,
+});
+
+export const setGridRows = (rows) => ({
+  type: appConstants.SET_GRID_ROWS,
+  payload: rows,
+});
+
+export const setValidHeaders = (headers) => ({
+  type: appConstants.SET_VALID_HEADERS,
+  payload: headers,
 });

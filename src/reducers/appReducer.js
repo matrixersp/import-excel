@@ -4,6 +4,7 @@ export const initialState = {
   rows: [],
   validHeaders: [],
   ignoredColumns: [],
+  gridRows: [],
 };
 
 const appReducer = (state = initialState, action) => {
@@ -32,6 +33,9 @@ const appReducer = (state = initialState, action) => {
       );
       return { ...state, ignoredColumns: newColumns };
     }
+
+    case appConstants.SET_GRID_ROWS:
+      return { ...state, gridRows: action.payload };
 
     default:
       return state;

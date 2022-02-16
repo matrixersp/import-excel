@@ -13,7 +13,7 @@ import ValidationErrors from "./components/ValidationErrors";
 import DataGridComponent from "./components/DataGridComponent";
 import StepperComponent from "./components/StepperComponent";
 
-let validationSchema = yup.object().shape({
+export const validationSchema = yup.object().shape({
   id: yup.number().min(1),
   name: yup
     .string()

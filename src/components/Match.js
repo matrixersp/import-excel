@@ -19,26 +19,95 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import { useEffect, useState } from "react";
 import { Stack, Typography } from "@mui/material";
-import { ignoreColumn, reconsiderColumn, setHeader } from "../actions";
+import {
+  ignoreColumn,
+  reconsiderColumn,
+  setHeader,
+  setGridRows,
+  setValidHeaders,
+} from "../actions";
+import { store } from "../store";
 
 const hasHeader = true;
 
 export default function Match({ validationSchema }) {
   const { rows, validHeaders, ignoredColumns } = useSelector(
-    ({ appReducer }) => ({
-      rows: appReducer.rows,
-      validHeaders: appReducer.validHeaders,
-      ignoredColumns: appReducer.ignoredColumns,
-    })
+    ({ appReducer }) => appReducer
   );
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const prepareGrid = () => {
+      const { rows, validHeaders, ignoredColumns } =
+        store.getState().appReducer;
+
+      const rowsWithHeaders = getRowsWithHeaders(
+        rows,
+        validHeaders,
+        ignoredColumns
+      );
+      dispatch(setGridRows(rowsWithHeaders));
+      dispatch(setValidHeaders(getValidHeaders(rowsWithHeaders[0])));
+      console.log(rows, validHeaders, ignoredColumns);
+    };
+
+    return prepareGrid;
+  }, []);
+
+  const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
+    let headers = Object.entries(rows[0]);
+    let headersWithFields = [];
+
+    headers.forEach((header) => {
+      let [label, headerName] = header;
+
+      if (!ignoredColumns.includes(label)) {
+        let field = validHeaders.find((v) => v.headerName === header[1])?.field;
+        headersWithFields.push({ label, field, headerName });
+      }
+    });
+
+    return rows.slice(1).map((row) => {
+      let newRow = { id: row.__rowNum__ };
+      let headersCount = {};
+      headersWithFields.forEach((header) => {
+        headersCount[header.field] = headersCount[header.field]
+          ? ++headersCount[header.field]
+          : 1;
+
+        const count = headersCount[header.field];
+        if (count > 1) newRow[header.field + "__" + count] = row[header.label];
+        else newRow[header.field] = row[header.label];
+      });
+      return newRow;
+    });
+  };
+
+  const getValidHeaders = (headersRow) => {
+    const headers = Object.keys(headersRow);
+    const idx = headers.indexOf("id");
+    if (idx !== -1) headers.splice(idx, 1);
+
+    let newValidHeaders = [...validHeaders];
+    headers.map((header) => {
+      const idx = validHeaders.findIndex(
+        (v) =>
+          header.split(/__\d$/).length > 1 &&
+          v.field === header.split(/__\d$/)[0]
+      );
+      if (idx !== -1)
+        newValidHeaders.push({
+          field: header,
+          headerName: validHeaders[idx].headerName,
+          editable: true,
+        });
+    });
+    return newValidHeaders;
+  };
 
   const headerNames = Object.values(rows[0]);
   const columnLabels = Object.keys(rows[0]);
   const headers = Object.entries(rows[0]);
-
-  // const setRowsIds = (rows) => {
-  //   return rows.map((row) => ({ ...row, id: row.__rowNum__ }));
-  // };
 
   return (
     <Box
@@ -80,9 +149,7 @@ function TableComponent({
   validationSchema,
   headers,
 }) {
-  const [currentHeaderField, setCurrentHeaderField] = useState(
-    headerName || ""
-  );
+  const [currentHeaderName, setCurrentHeaderField] = useState(headerName || "");
   const [emptyRowsRatio, setEmptyRowsRatio] = useState(0);
   const [nonValidRowsRatio, setNonValidRowsRatio] = useState(0);
   const [isEditing, setIsEditing] = useState(true);
@@ -92,13 +159,21 @@ function TableComponent({
   const dispatch = useDispatch();
 
   useEffect(() => {
-    validateRowsByField(currentHeaderField, rows);
+    let headerField = getHeaderField();
+    validateRowsByField(headerField, rows);
     computeEmptyRowsRatio();
   }, []);
 
   useEffect(() => {
-    validateRowsByField(currentHeaderField, rows);
-  }, [currentHeaderField]);
+    let headerField = getHeaderField();
+    validateRowsByField(headerField, rows);
+  }, [currentHeaderName]);
+
+  const getHeaderField = () => {
+    return validHeaders.find(
+      (header) => header.headerName === currentHeaderName
+    )?.field;
+  };
 
   const handleHeaderChange = (e) => {
     const value = e.target.value;
@@ -107,11 +182,11 @@ function TableComponent({
     dispatch(setHeader(value, columnLabel));
   };
 
-  const validateRowsByField = (headerColumn, fieldRows) => {
+  const validateRowsByField = (headerField, fieldRows) => {
     const validRows = fieldRows.map(async (row) => {
-      const rowToValidate = { [headerColumn]: row[columnLabel] };
+      const rowToValidate = { [headerField]: row[columnLabel] };
       try {
-        await validationSchema.validateAt(headerColumn, rowToValidate);
+        await validationSchema.validateAt(headerField, rowToValidate);
         return true;
       } catch (err) {
         return false;
@@ -150,7 +225,7 @@ function TableComponent({
       (header) => !ignoredColumns.includes(header[0])
     );
     return (
-      filtered.filter((header) => header[1] === currentHeaderField).length > 1
+      filtered.filter((header) => header[1] === currentHeaderName).length > 1
     );
   };
 
@@ -213,7 +288,7 @@ function TableComponent({
         <>
           <TableContainer
             component={Paper}
-            key={currentHeaderField}
+            key={currentHeaderName}
             sx={{ width: 260 }}
           >
             <Table aria-label="simple table">
@@ -228,7 +303,7 @@ function TableComponent({
                       <Select
                         labelId="demo-simple-select-label"
                         id="demo-simple-select"
-                        value={currentHeaderField}
+                        value={currentHeaderName}
                         label="Matching field"
                         onChange={handleHeaderChange}
                       >
@@ -238,7 +313,10 @@ function TableComponent({
                         {validHeaders
                           .filter((c) => c.headerName)
                           .map((column) => (
-                            <MenuItem value={column.field} key={column.field}>
+                            <MenuItem
+                              value={column.headerName}
+                              key={column.field}
+                            >
                               {column.headerName}
                             </MenuItem>
                           ))}
@@ -320,7 +398,7 @@ function TableComponent({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "text.primary",
+                      color: "text.secondary",
                       display: "flex",
                       alignItems: "center",
                     }}
@@ -332,7 +410,7 @@ function TableComponent({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: "text.primary",
+                      color: "text.secondary",
                       display: "flex",
                       alignItems: "center",
                     }}
@@ -346,7 +424,7 @@ function TableComponent({
                 <Typography
                   variant="body2"
                   sx={{
-                    color: "text.primary",
+                    color: "text.secondary",
                     display: "flex",
                     alignItems: "center",
                   }}
