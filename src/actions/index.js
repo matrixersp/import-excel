@@ -25,7 +25,17 @@ export const setGridRows = (rows) => ({
   payload: rows,
 });
 
+export const setGridColumns = (columns) => ({
+  type: appConstants.SET_GRID_COLUMNS,
+  payload: columns,
+});
+
 export const setValidHeaders = (headers) => ({
   type: appConstants.SET_VALID_HEADERS,
   payload: headers,
+});
+
+export const setErrors = (columnLabel, errors) => ({
+  type: appConstants.SET_VALIDATION_ERRORS,
+  payload: { columnLabel, errors },
 });

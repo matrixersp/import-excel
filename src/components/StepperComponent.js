@@ -6,14 +6,47 @@ import StepLabel from "@mui/material/StepLabel";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 
-// const steps = ["Upload", "Match", "Review", "Complete"];
-
-export default function StepperComponent({ steps, canGoToNextStep }) {
+export default function StepperComponent({ steps }) {
   const [activeStep, setActiveStep] = useState(0);
 
+  const [canGoNext, setCanGoNext] = useState(false);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [openNext, setOpenNext] = useState(false);
+  const [openBack, setOpenBack] = useState(false);
+
+  const handleClickOpenNext = () => {
+    setOpenNext(true);
+  };
+
+  const handleClickOpenBack = () => {
+    setOpenBack(true);
+  };
+
+  const handleCloseNext = () => {
+    setOpenNext(false);
+  };
+
+  const handleCloseBack = () => {
+    setOpenBack(false);
+  };
+
   const handleNext = () => {
-    if (canGoToNextStep && activeStep + 1 < steps.length)
+    if (canGoNext && activeStep + 1 < steps.length)
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleSubmit = () => {
+    setCanGoNext(true);
+  };
+
+  const handlePrevious = () => {
+    setCanGoBack(true);
+  };
+
+  const nextAction = async (callback) => {
+    const moveForward = await callback();
+    setCanGoNext(false);
+    if (moveForward) handleNext();
   };
 
   const handleBack = () => {
@@ -24,12 +57,12 @@ export default function StepperComponent({ steps, canGoToNextStep }) {
     setActiveStep(0);
   };
 
-  const renderStep = () => steps[activeStep]?.component;
+  const Component = steps[activeStep].component;
 
   return (
     <Box sx={{ width: "100%" }}>
       <Stepper activeStep={activeStep}>
-        {steps.map(({ label, component }, index) => {
+        {steps.map(({ label }, index) => {
           const stepProps = {};
           const labelProps = {};
           return (
@@ -39,7 +72,17 @@ export default function StepperComponent({ steps, canGoToNextStep }) {
           );
         })}
       </Stepper>
-      {renderStep()}
+      {
+        <Component
+          handleNext={handleNext}
+          activeStep={activeStep}
+          canGoNext={canGoNext}
+          canGoBack={canGoBack}
+          nextAction={nextAction}
+          nextDialogProps={{ openNext, handleClickOpenNext, handleCloseNext }}
+          backDialogProps={{ openBack, handleClickOpenBack, handleCloseBack }}
+        />
+      }
       {activeStep === steps.length ? (
         <>
           <Typography sx={{ mt: 2, mb: 1 }}>
@@ -56,18 +99,14 @@ export default function StepperComponent({ steps, canGoToNextStep }) {
             <Button
               color="inherit"
               disabled={activeStep === 0}
-              onClick={handleBack}
+              onClick={handlePrevious}
               sx={{ mr: 1 }}
             >
               Back
             </Button>
             <Box sx={{ flex: "1 1 auto" }} />
 
-            <Button
-              onClick={handleNext}
-              variant="contained"
-              disabled={!canGoToNextStep}
-            >
+            <Button onClick={handleSubmit} variant="contained">
               {activeStep === steps.length - 1 ? "Finish" : "Next"}
             </Button>
           </Box>

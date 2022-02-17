@@ -17,6 +17,12 @@ import InfoIcon from "@mui/icons-material/Info";
 import WarningIcon from "@mui/icons-material/Warning";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+
 import { useEffect, useState } from "react";
 import { Stack, Typography } from "@mui/material";
 import {
@@ -24,89 +30,63 @@ import {
   reconsiderColumn,
   setHeader,
   setGridRows,
-  setValidHeaders,
+  setGridColumns,
+  setErrors,
 } from "../actions";
 import { store } from "../store";
+import * as yup from "yup";
 
 const hasHeader = true;
 
-export default function Match({ validationSchema }) {
+export const validationSchema = yup.object().shape({
+  id: yup.number().min(1),
+  name: yup
+    .string()
+    .trim()
+    .matches(
+      /(^[A-Za-z]{3,16})([ ]{0,1})([A-Za-z]{3,16})?([ ]{0,1})?([A-Za-z]{3,16})?([ ]{0,1})?([A-Za-z]{3,16})/,
+      "Full name is not valid"
+    )
+    .required(),
+  email: yup.string().trim().email().required(),
+});
+
+export default function Match({
+  canGoNext,
+  canGoBack,
+  nextAction,
+  backDialogProps,
+}) {
   const { rows, validHeaders, ignoredColumns } = useSelector(
     ({ appReducer }) => appReducer
   );
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const prepareGrid = () => {
-      const { rows, validHeaders, ignoredColumns } =
-        store.getState().appReducer;
+    if (canGoNext)
+      nextAction(async () => {
+        const { rows, validHeaders, ignoredColumns } =
+          store.getState().appReducer;
 
-      const rowsWithHeaders = getRowsWithHeaders(
-        rows,
-        validHeaders,
-        ignoredColumns
-      );
-      dispatch(setGridRows(rowsWithHeaders));
-      dispatch(setValidHeaders(getValidHeaders(rowsWithHeaders[0])));
-      console.log(rows, validHeaders, ignoredColumns);
-    };
-
-    return prepareGrid;
-  }, []);
-
-  const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
-    let headers = Object.entries(rows[0]);
-    let headersWithFields = [];
-
-    headers.forEach((header) => {
-      let [label, headerName] = header;
-
-      if (!ignoredColumns.includes(label)) {
-        let field = validHeaders.find((v) => v.headerName === header[1])?.field;
-        headersWithFields.push({ label, field, headerName });
-      }
-    });
-
-    return rows.slice(1).map((row) => {
-      let newRow = { id: row.__rowNum__ };
-      let headersCount = {};
-      headersWithFields.forEach((header) => {
-        headersCount[header.field] = headersCount[header.field]
-          ? ++headersCount[header.field]
-          : 1;
-
-        const count = headersCount[header.field];
-        if (count > 1) newRow[header.field + "__" + count] = row[header.label];
-        else newRow[header.field] = row[header.label];
+        const rowsWithHeaders = getRowsWithHeaders(
+          rows,
+          validHeaders,
+          ignoredColumns
+        );
+        const gridColumns = getValidHeaders(rowsWithHeaders[0], validHeaders);
+        dispatch(setGridRows(rowsWithHeaders));
+        dispatch(setGridColumns(gridColumns));
+        return true;
       });
-      return newRow;
-    });
-  };
+  }, [canGoNext]);
 
-  const getValidHeaders = (headersRow) => {
-    const headers = Object.keys(headersRow);
-    const idx = headers.indexOf("id");
-    if (idx !== -1) headers.splice(idx, 1);
+  useEffect(() => {
+    if (canGoBack)
+      nextAction(async () => {
+        backDialogProps.handleClickOpenBack();
+      });
+  }, [canGoBack]);
 
-    let newValidHeaders = [...validHeaders];
-    headers.map((header) => {
-      const idx = validHeaders.findIndex(
-        (v) =>
-          header.split(/__\d$/).length > 1 &&
-          v.field === header.split(/__\d$/)[0]
-      );
-      if (idx !== -1)
-        newValidHeaders.push({
-          field: header,
-          headerName: validHeaders[idx].headerName,
-          editable: true,
-        });
-    });
-    return newValidHeaders;
-  };
-
-  const headerNames = Object.values(rows[0]);
-  const columnLabels = Object.keys(rows[0]);
   const headers = Object.entries(rows[0]);
 
   return (
@@ -117,23 +97,26 @@ export default function Match({ validationSchema }) {
         "&>:not(:first-of-type)": { mt: 2 },
       }}
     >
-      {headerNames.map((headerName, idx) => {
+      {headers.map((header, idx) => {
         return (
           <Box key={idx}>
             <TableComponent
               rows={hasHeader ? rows.slice(1) : rows}
               validHeaders={validHeaders}
-              headerName={headerName}
-              columnLabel={columnLabels[idx]}
+              columnLabel={header[0]}
+              headerName={header[1]}
               ignoredColumns={ignoredColumns}
               idx={idx}
               validationSchema={validationSchema}
-              headerNames={headerNames}
               headers={headers}
             />
           </Box>
         );
       })}
+      <BackDialog
+        open={backDialogProps.openBack}
+        onClose={backDialogProps.handleCloseBack}
+      />
     </Box>
   );
 }
@@ -142,20 +125,17 @@ function TableComponent({
   rows,
   validHeaders,
   headerName,
-  headerNames,
   columnLabel,
   ignoredColumns,
   idx,
-  validationSchema,
   headers,
 }) {
   const [currentHeaderName, setCurrentHeaderField] = useState(headerName || "");
+  // const [validationErrors, setValidationErrors] = useState([]);
   const [emptyRowsRatio, setEmptyRowsRatio] = useState(0);
   const [nonValidRowsRatio, setNonValidRowsRatio] = useState(0);
-  const [isEditing, setIsEditing] = useState(true);
-  const isIgnoredColumn = useSelector((state) =>
-    state.appReducer.ignoredColumns.some((label) => label === columnLabel)
-  );
+  const isIgnoredColumn = ignoredColumns.includes(columnLabel);
+  const [isEditing, setIsEditing] = useState(!isIgnoredColumn);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -184,16 +164,19 @@ function TableComponent({
 
   const validateRowsByField = (headerField, fieldRows) => {
     const validRows = fieldRows.map(async (row) => {
-      const rowToValidate = { [headerField]: row[columnLabel] };
+      if (!headerField) return false;
+      const fieldToValidate = { [headerField]: row[columnLabel] };
       try {
-        await validationSchema.validateAt(headerField, rowToValidate);
-        return true;
+        await validationSchema.validateAt(headerField, fieldToValidate);
+        return null;
       } catch (err) {
-        return false;
+        // setValidationErrors((validationErrors) => [...validationErrors, err]);
+        return err;
       }
     });
 
     Promise.all(validRows).then((result) => {
+      dispatch(setErrors(columnLabel, result));
       let nonValidRowsCount = result.filter((isValidRow) => !isValidRow).length;
       const nonValidRowsRatio = (nonValidRowsCount * 100) / fieldRows.length;
       setNonValidRowsRatio(Math.round(nonValidRowsRatio * 10) / 10);
@@ -304,6 +287,7 @@ function TableComponent({
                         labelId="demo-simple-select-label"
                         id="demo-simple-select"
                         value={currentHeaderName}
+                        name={columnLabel}
                         label="Matching field"
                         onChange={handleHeaderChange}
                       >
@@ -333,7 +317,7 @@ function TableComponent({
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
                       <TableCell width={20}>
-                        {idx + hasHeader ? 2 : 1}
+                        {idx + (hasHeader ? 2 : 1)}
                       </TableCell>
                       {row[columnLabel] ? (
                         <TableCell>{row[columnLabel]}</TableCell>
@@ -460,3 +444,79 @@ function TableComponent({
     </Stack>
   );
 }
+
+function BackDialog({ open, onClose }) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="alert-dialog-title"
+      aria-describedby="alert-dialog-description"
+    >
+      <DialogTitle id="alert-dialog-title">
+        {
+          "Are you sure you want to clear all changes to data in progress in this stage?"
+        }
+      </DialogTitle>
+      <DialogActions>
+        <Button onClick={onClose} variant="outlined">
+          No
+        </Button>
+        <Button onClick={onClose} variant="contained" autoFocus>
+          Yes
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
+  let headers = Object.entries(rows[0]);
+  let headersWithFields = [];
+
+  headers.forEach((header) => {
+    let [label, headerName] = header;
+
+    if (!ignoredColumns.includes(label)) {
+      let field = validHeaders.find((v) => v.headerName === header[1])?.field;
+      headersWithFields.push({ label, field, headerName });
+    }
+  });
+
+  return rows.slice(1).map((row) => {
+    let newRow = { id: row.__rowNum__ };
+    let headersCount = {};
+    headersWithFields.forEach((header) => {
+      headersCount[header.field] = headersCount[header.field]
+        ? ++headersCount[header.field]
+        : 1;
+
+      const count = headersCount[header.field];
+      if (count > 1) newRow[header.field + "__" + count] = row[header.label];
+      else newRow[header.field] = row[header.label];
+    });
+    return newRow;
+  });
+};
+
+const getValidHeaders = (headersRow, validHeaders) => {
+  const headers = Object.keys(headersRow);
+  const idx = headers.indexOf("id");
+  if (idx !== -1) headers.splice(idx, 1);
+
+  // TODO set cellClassName here
+  let newValidHeaders = [...validHeaders];
+  headers.map((header) => {
+    const idx = validHeaders.findIndex(
+      (v) =>
+        header.split(/__\d$/).length > 1 && v.field === header.split(/__\d$/)[0]
+    );
+    if (idx !== -1)
+      newValidHeaders.push({
+        field: header,
+        headerName: validHeaders[idx].headerName,
+        editable: true,
+      });
+  });
+  return newValidHeaders;
+};

@@ -1,6 +1,6 @@
 import { createStore } from "redux";
 import rootReducer from "./reducers";
-import { validationSchema } from "./App";
+import { validationSchema } from "./components/Match";
 
 const columns: GridColDef[] = [
   { field: "id", hide: true },
@@ -26,7 +26,11 @@ const columns: GridColDef[] = [
 export const store = createStore(
   rootReducer,
   {
-    appReducer: { validHeaders: columns, ignoredColumns: [] },
+    appReducer: {
+      validHeaders: columns,
+      ignoredColumns: [],
+      validationErrors: [],
+    },
   },
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );

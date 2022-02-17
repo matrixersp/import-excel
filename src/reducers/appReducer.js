@@ -5,6 +5,8 @@ export const initialState = {
   validHeaders: [],
   ignoredColumns: [],
   gridRows: [],
+  gridColumns: [],
+  validationErrors: [],
 };
 
 const appReducer = (state = initialState, action) => {
@@ -36,6 +38,22 @@ const appReducer = (state = initialState, action) => {
 
     case appConstants.SET_GRID_ROWS:
       return { ...state, gridRows: action.payload };
+
+    case appConstants.SET_GRID_COLUMNS:
+      return { ...state, gridColumns: action.payload };
+
+    case appConstants.SET_VALIDATION_ERRORS:
+      const validationErrors = [...state.validationErrors];
+      const { columnLabel, errors } = action.payload;
+      const index = validationErrors.findIndex(
+        (err) => err.columnLabel === columnLabel
+      );
+
+      if (index !== -1)
+        validationErrors.splice(index, 1, { columnLabel, errors });
+      else validationErrors.push({ columnLabel, errors });
+
+      return { ...state, validationErrors };
 
     default:
       return state;

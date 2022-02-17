@@ -1,25 +1,31 @@
-import React, { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Stack, Box, Divider, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import XLSX from "xlsx";
 import { useDispatch } from "react-redux";
 import { setRows } from "../actions/index";
 
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+
 const Input = styled("input")({
   display: "none",
 });
 
 export default function Upload({
-  selectedFile,
-  setSelectedFile,
-  setSubmitted,
-  setCanGoToNextStep,
+  canGoNext,
+  canGoBack,
+  nextAction,
+  nextDialogProps,
 }) {
+  const [selectedFile, setSelectedFile] = useState(null);
   const dispatch = useDispatch();
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
-    setSubmitted(false);
   };
 
   const handleDragOver = (e) => {
@@ -52,13 +58,24 @@ export default function Upload({
     });
 
     dispatch(setRows(selectedRows));
-    setSubmitted(true);
-    setCanGoToNextStep(true);
   };
 
   useEffect(() => {
-    if (selectedFile) submit();
-  }, [selectedFile]);
+    if (canGoNext)
+      nextAction(async () => {
+        if (!selectedFile) {
+          nextDialogProps.handleClickOpenNext();
+          return false;
+        } else {
+          await submit();
+          return true;
+        }
+      });
+  }, [canGoNext]);
+
+  // useEffect(() => {
+  //   if (canGoBack) nextAction(async () => await dispatch(reset()));
+  // }, [canGoBack]);
 
   return (
     <Box
@@ -118,6 +135,30 @@ export default function Upload({
           </Typography>
         </Box>
       </Stack>
+      <NextDialog
+        open={nextDialogProps.openNext}
+        onClose={nextDialogProps.handleCloseNext}
+      />
     </Box>
+  );
+}
+
+function NextDialog({ open, onClose }) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="alert-dialog-title"
+      aria-describedby="alert-dialog-description"
+    >
+      <DialogTitle id="alert-dialog-title">
+        {"Please upload a .csv, .tsv or .txt file then click next."}
+      </DialogTitle>
+      <DialogActions>
+        <Button onClick={onClose} variant="contained" autoFocus>
+          Ok
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
