@@ -17,75 +17,36 @@ import InfoIcon from "@mui/icons-material/Info";
 import WarningIcon from "@mui/icons-material/Warning";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+import { useDialog } from "../hooks/useDialog";
 
 import { useEffect, useState } from "react";
 import { Stack, Typography } from "@mui/material";
-import {
-  ignoreColumn,
-  reconsiderColumn,
-  setHeader,
-  setGridRows,
-  setGridColumns,
-  setErrors,
-} from "../actions";
-import { store } from "../store";
-import * as yup from "yup";
+import { ignoreColumn, reconsiderColumn, setHeader } from "../actions";
+import { validationSchema } from "./validationSchema";
 
 const hasHeader = true;
-
-export const validationSchema = yup.object().shape({
-  id: yup.number().min(1),
-  name: yup
-    .string()
-    .trim()
-    .matches(
-      /(^[A-Za-z]{3,16})([ ]{0,1})([A-Za-z]{3,16})?([ ]{0,1})?([A-Za-z]{3,16})?([ ]{0,1})?([A-Za-z]{3,16})/,
-      "Full name is not valid"
-    )
-    .required(),
-  email: yup.string().trim().email().required(),
-});
 
 export default function Match({
   canGoNext,
   canGoBack,
+  backAction,
   nextAction,
   backDialogProps,
 }) {
   const { rows, validHeaders, ignoredColumns } = useSelector(
     ({ appReducer }) => appReducer
   );
-  const dispatch = useDispatch();
+  const { handleClose, handleClickOpen, AlertDialog: BackDialog } = useDialog();
 
   useEffect(() => {
-    if (canGoNext)
-      nextAction(async () => {
-        const { rows, validHeaders, ignoredColumns } =
-          store.getState().appReducer;
+    if (canGoBack) backAction(handleClickOpen);
+    if (canGoNext) nextAction(() => true);
+  }, [canGoBack, canGoNext]);
 
-        const rowsWithHeaders = getRowsWithHeaders(
-          rows,
-          validHeaders,
-          ignoredColumns
-        );
-        const gridColumns = getValidHeaders(rowsWithHeaders[0], validHeaders);
-        dispatch(setGridRows(rowsWithHeaders));
-        dispatch(setGridColumns(gridColumns));
-        return true;
-      });
-  }, [canGoNext]);
-
-  useEffect(() => {
-    if (canGoBack)
-      nextAction(async () => {
-        backDialogProps.handleClickOpenBack();
-      });
-  }, [canGoBack]);
+  const handleConfirm = () => {
+    handleClose();
+    backAction(() => true);
+  };
 
   const headers = Object.entries(rows[0]);
 
@@ -114,9 +75,17 @@ export default function Match({
         );
       })}
       <BackDialog
-        open={backDialogProps.openBack}
-        onClose={backDialogProps.handleCloseBack}
-      />
+        title={
+          "Are you sure you want to clear all changes to data in progress in this stage?"
+        }
+      >
+        <Button onClick={handleClose} variant="outlined">
+          Cancel
+        </Button>
+        <Button onClick={handleConfirm} variant="contained">
+          Confirm
+        </Button>
+      </BackDialog>
     </Box>
   );
 }
@@ -131,7 +100,6 @@ function TableComponent({
   headers,
 }) {
   const [currentHeaderName, setCurrentHeaderField] = useState(headerName || "");
-  // const [validationErrors, setValidationErrors] = useState([]);
   const [emptyRowsRatio, setEmptyRowsRatio] = useState(0);
   const [nonValidRowsRatio, setNonValidRowsRatio] = useState(0);
   const isIgnoredColumn = ignoredColumns.includes(columnLabel);
@@ -163,24 +131,20 @@ function TableComponent({
   };
 
   const validateRowsByField = (headerField, fieldRows) => {
-    const validRows = fieldRows.map(async (row) => {
+    const result = fieldRows.map((row) => {
       if (!headerField) return false;
       const fieldToValidate = { [headerField]: row[columnLabel] };
       try {
-        await validationSchema.validateAt(headerField, fieldToValidate);
-        return null;
+        validationSchema.validateSyncAt(headerField, fieldToValidate);
+        return true;
       } catch (err) {
-        // setValidationErrors((validationErrors) => [...validationErrors, err]);
-        return err;
+        return false;
       }
     });
 
-    Promise.all(validRows).then((result) => {
-      dispatch(setErrors(columnLabel, result));
-      let nonValidRowsCount = result.filter((isValidRow) => !isValidRow).length;
-      const nonValidRowsRatio = (nonValidRowsCount * 100) / fieldRows.length;
-      setNonValidRowsRatio(Math.round(nonValidRowsRatio * 10) / 10);
-    });
+    let nonValidRowsCount = result.filter((isValidRow) => !isValidRow).length;
+    const nonValidRowsRatio = (nonValidRowsCount * 100) / fieldRows.length;
+    setNonValidRowsRatio(Math.round(nonValidRowsRatio * 10) / 10);
   };
 
   const computeEmptyRowsRatio = () => {
@@ -444,79 +408,3 @@ function TableComponent({
     </Stack>
   );
 }
-
-function BackDialog({ open, onClose }) {
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      aria-labelledby="alert-dialog-title"
-      aria-describedby="alert-dialog-description"
-    >
-      <DialogTitle id="alert-dialog-title">
-        {
-          "Are you sure you want to clear all changes to data in progress in this stage?"
-        }
-      </DialogTitle>
-      <DialogActions>
-        <Button onClick={onClose} variant="outlined">
-          No
-        </Button>
-        <Button onClick={onClose} variant="contained" autoFocus>
-          Yes
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
-  let headers = Object.entries(rows[0]);
-  let headersWithFields = [];
-
-  headers.forEach((header) => {
-    let [label, headerName] = header;
-
-    if (!ignoredColumns.includes(label)) {
-      let field = validHeaders.find((v) => v.headerName === header[1])?.field;
-      headersWithFields.push({ label, field, headerName });
-    }
-  });
-
-  return rows.slice(1).map((row) => {
-    let newRow = { id: row.__rowNum__ };
-    let headersCount = {};
-    headersWithFields.forEach((header) => {
-      headersCount[header.field] = headersCount[header.field]
-        ? ++headersCount[header.field]
-        : 1;
-
-      const count = headersCount[header.field];
-      if (count > 1) newRow[header.field + "__" + count] = row[header.label];
-      else newRow[header.field] = row[header.label];
-    });
-    return newRow;
-  });
-};
-
-const getValidHeaders = (headersRow, validHeaders) => {
-  const headers = Object.keys(headersRow);
-  const idx = headers.indexOf("id");
-  if (idx !== -1) headers.splice(idx, 1);
-
-  // TODO set cellClassName here
-  let newValidHeaders = [...validHeaders];
-  headers.map((header) => {
-    const idx = validHeaders.findIndex(
-      (v) =>
-        header.split(/__\d$/).length > 1 && v.field === header.split(/__\d$/)[0]
-    );
-    if (idx !== -1)
-      newValidHeaders.push({
-        field: header,
-        headerName: validHeaders[idx].headerName,
-        editable: true,
-      });
-  });
-  return newValidHeaders;
-};

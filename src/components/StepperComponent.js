@@ -11,24 +11,6 @@ export default function StepperComponent({ steps }) {
 
   const [canGoNext, setCanGoNext] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
-  const [openNext, setOpenNext] = useState(false);
-  const [openBack, setOpenBack] = useState(false);
-
-  const handleClickOpenNext = () => {
-    setOpenNext(true);
-  };
-
-  const handleClickOpenBack = () => {
-    setOpenBack(true);
-  };
-
-  const handleCloseNext = () => {
-    setOpenNext(false);
-  };
-
-  const handleCloseBack = () => {
-    setOpenBack(false);
-  };
 
   const handleNext = () => {
     if (canGoNext && activeStep + 1 < steps.length)
@@ -44,9 +26,15 @@ export default function StepperComponent({ steps }) {
   };
 
   const nextAction = async (callback) => {
-    const moveForward = await callback();
     setCanGoNext(false);
+    const moveForward = await callback();
     if (moveForward) handleNext();
+  };
+
+  const backAction = async (callback) => {
+    setCanGoBack(false);
+    const moveBack = await callback();
+    if (moveBack) handleBack();
   };
 
   const handleBack = () => {
@@ -79,8 +67,7 @@ export default function StepperComponent({ steps }) {
           canGoNext={canGoNext}
           canGoBack={canGoBack}
           nextAction={nextAction}
-          nextDialogProps={{ openNext, handleClickOpenNext, handleCloseNext }}
-          backDialogProps={{ openBack, handleClickOpenBack, handleCloseBack }}
+          backAction={backAction}
         />
       }
       {activeStep === steps.length ? (

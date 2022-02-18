@@ -4,12 +4,7 @@ import { styled } from "@mui/material/styles";
 import XLSX from "xlsx";
 import { useDispatch } from "react-redux";
 import { setRows } from "../actions/index";
-
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+import { useDialog } from "../hooks/useDialog";
 
 const Input = styled("input")({
   display: "none",
@@ -22,6 +17,7 @@ export default function Upload({
   nextDialogProps,
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
+  const { handleClickOpen, AlertDialog: NextDialog } = useDialog();
   const dispatch = useDispatch();
 
   const handleFileChange = (event) => {
@@ -40,7 +36,7 @@ export default function Upload({
     e.target.classList.remove("dragging");
   };
 
-  const handleDrop = async (e) => {
+  const handleDrop = (e) => {
     e.stopPropagation();
     e.preventDefault();
     e.target.classList.remove("dragging");
@@ -64,7 +60,7 @@ export default function Upload({
     if (canGoNext)
       nextAction(async () => {
         if (!selectedFile) {
-          nextDialogProps.handleClickOpenNext();
+          handleClickOpen();
           return false;
         } else {
           await submit();
@@ -72,10 +68,6 @@ export default function Upload({
         }
       });
   }, [canGoNext]);
-
-  // useEffect(() => {
-  //   if (canGoBack) nextAction(async () => await dispatch(reset()));
-  // }, [canGoBack]);
 
   return (
     <Box
@@ -136,29 +128,8 @@ export default function Upload({
         </Box>
       </Stack>
       <NextDialog
-        open={nextDialogProps.openNext}
-        onClose={nextDialogProps.handleCloseNext}
+        title={"Please upload a .csv, .tsv or .txt file then click next."}
       />
     </Box>
-  );
-}
-
-function NextDialog({ open, onClose }) {
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      aria-labelledby="alert-dialog-title"
-      aria-describedby="alert-dialog-description"
-    >
-      <DialogTitle id="alert-dialog-title">
-        {"Please upload a .csv, .tsv or .txt file then click next."}
-      </DialogTitle>
-      <DialogActions>
-        <Button onClick={onClose} variant="contained" autoFocus>
-          Ok
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 }

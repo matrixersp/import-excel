@@ -55,6 +55,17 @@ const appReducer = (state = initialState, action) => {
 
       return { ...state, validationErrors };
 
+    case appConstants.UPDATE_EDITED_GRID_ROWS:
+      const editedGridRows = action.payload;
+      const gridRows = [...state.gridRows];
+
+      Object.keys(editedGridRows).forEach((id) => {
+        const idx = gridRows.findIndex((row) => String(row.id) === id);
+        if (idx !== -1) gridRows[idx] = editedGridRows[id];
+      });
+
+      return { ...state, gridRows };
+
     default:
       return state;
   }

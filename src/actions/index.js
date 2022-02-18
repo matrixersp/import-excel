@@ -39,3 +39,8 @@ export const setErrors = (columnLabel, errors) => ({
   type: appConstants.SET_VALIDATION_ERRORS,
   payload: { columnLabel, errors },
 });
+
+export const updateEditedGridRows = (rows) => ({
+  type: appConstants.UPDATE_EDITED_GRID_ROWS,
+  payload: rows,
+});
