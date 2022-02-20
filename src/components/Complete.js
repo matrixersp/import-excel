@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useDialog } from "../hooks/useDialog";
 import { Box, Card, CardHeader, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
@@ -17,12 +17,10 @@ export default function Complete({ canGoBack, backAction }) {
     backAction(() => true);
   };
 
-  const getGridColumns = () => {
-    return gridColumns.map((column) => {
-      const { editable, ...rest } = column;
-      return rest;
-    });
-  };
+  const getGridColumns = useMemo(
+    () => gridColumns.map((column) => ({ ...column, editable: false })),
+    [gridColumns]
+  );
 
   return gridRows ? (
     <Box
@@ -38,7 +36,7 @@ export default function Complete({ canGoBack, backAction }) {
     >
       <DataGrid
         rows={gridRows}
-        columns={getGridColumns()}
+        columns={getGridColumns}
         pageSize={10}
         rowsPerPageOptions={[10, 25, 50]}
         rowHeight={35}

@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Box, Card, CardHeader, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { setGridRows, setGridColumns, updateEditedGridRows } from "../actions";
 import { validationSchema } from "./validationSchema";
 import { useDialog } from "../hooks/useDialog";
@@ -32,38 +32,61 @@ export default function Review({
   }, [canGoBack, canGoNext]);
 
   useEffect(() => {
-    const rowsWithHeaders = getRowsWithHeaders(
-      rows,
-      validHeaders,
-      ignoredColumns
-    );
-    const gridColumns = getValidHeaders(
-      rowsWithHeaders[0],
-      validHeaders,
-      rowsWithHeaders
-    );
-    dispatch(setGridRows(rowsWithHeaders));
-    dispatch(setGridColumns(gridColumns));
+    if (gridRows?.length === 0) {
+      const rowsWithHeaders = getRowsWithHeaders(
+        rows,
+        validHeaders,
+        ignoredColumns
+      );
+      const gridColumns = getValidHeaders(
+        rowsWithHeaders[0],
+        validHeaders,
+        rowsWithHeaders
+      );
+      dispatch(setGridRows(rowsWithHeaders));
+      dispatch(setGridColumns(gridColumns));
+    }
   }, []);
 
-  const getValidColumns = () => {
-    return gridColumns.map((header) => {
-      return {
-        ...header,
-        cellClassName: (params) => {
-          try {
-            validationSchema.validateSyncAt(header.field, params.row);
-          } catch (error) {
-            return "validation-error";
-          }
-        },
-      };
+  const extendedSchema = useMemo(() => {
+    const fields = gridColumns
+      ?.filter((c) => c.field !== "id")
+      ?.map((c) => c.field);
+    let extendedSchema = validationSchema;
+
+    fields?.forEach((field) => {
+      if (field.split(/__\d$/).length > 1) {
+        extendedSchema = validationSchema.shape({
+          [field]: validationSchema.fields[field.split(/__\d$/)[0]],
+        });
+      }
     });
-  };
+
+    return extendedSchema;
+  }, [gridColumns]);
+
+  const getValidColumns = useMemo(
+    () =>
+      gridColumns?.map((header) => {
+        return {
+          ...header,
+          cellClassName: (params) => {
+            try {
+              extendedSchema.validateSyncAt(header.field, params.row);
+            } catch (error) {
+              return "validation-error";
+            }
+          },
+        };
+      }),
+    [gridColumns, extendedSchema]
+  );
 
   const handleConfirm = () => {
     backAction(() => true);
     handleClose();
+    dispatch(setGridRows([]));
+    dispatch(setGridColumns([]));
   };
 
   return gridRows?.length > 0 ? (
@@ -80,7 +103,7 @@ export default function Review({
     >
       <DataGrid
         rows={gridRows}
-        columns={getValidColumns()}
+        columns={getValidColumns}
         pageSize={10}
         rowsPerPageOptions={[10, 25, 50]}
         rowHeight={35}
