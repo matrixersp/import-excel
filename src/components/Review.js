@@ -32,20 +32,18 @@ export default function Review({
   }, [canGoBack, canGoNext]);
 
   useEffect(() => {
-    if (gridRows?.length === 0) {
-      const rowsWithHeaders = getRowsWithHeaders(
-        rows,
-        validHeaders,
-        ignoredColumns
-      );
-      const gridColumns = getValidHeaders(
-        rowsWithHeaders[0],
-        validHeaders,
-        rowsWithHeaders
-      );
-      dispatch(setGridRows(rowsWithHeaders));
-      dispatch(setGridColumns(gridColumns));
-    }
+    const rowsWithHeaders = getRowsWithHeaders(
+      rows,
+      validHeaders,
+      ignoredColumns
+    );
+    const gridColumns = getValidHeaders(
+      rowsWithHeaders[0],
+      validHeaders,
+      rowsWithHeaders
+    );
+    dispatch(setGridRows(rowsWithHeaders));
+    dispatch(setGridColumns(gridColumns));
   }, []);
 
   const extendedSchema = useMemo(() => {
