@@ -23,15 +23,6 @@ export default function Review({
   };
 
   useEffect(() => {
-    if (canGoBack) backAction(handleClickOpen);
-    if (canGoNext)
-      nextAction(async () => {
-        await saveEditedGridRows();
-        return true;
-      });
-  }, [canGoBack, canGoNext]);
-
-  useEffect(() => {
     const rowsWithHeaders = getRowsWithHeaders(
       rows,
       validHeaders,
@@ -45,6 +36,15 @@ export default function Review({
     dispatch(setGridRows(rowsWithHeaders));
     dispatch(setGridColumns(gridColumns));
   }, []);
+
+  useEffect(() => {
+    if (canGoBack) backAction(handleClickOpen);
+    if (canGoNext)
+      nextAction(async () => {
+        await saveEditedGridRows();
+        return true;
+      });
+  }, [canGoBack, canGoNext]);
 
   const extendedSchema = useMemo(() => {
     const fields = gridColumns
@@ -151,7 +151,7 @@ const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
 
     if (!ignoredColumns.includes(label)) {
       let field = validHeaders.find((v) => v.headerName === header[1])?.field;
-      headersWithFields.push({ label, field, headerName });
+      if (field) headersWithFields.push({ label, field, headerName });
     }
   });
 
@@ -170,20 +170,22 @@ const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
 };
 
 const getValidHeaders = (headersRow, validHeaders, rows) => {
-  let newValidHeaders = [...validHeaders];
+  let newValidHeaders = [];
 
-  Object.keys(headersRow).forEach((field) => {
-    const idx = validHeaders.findIndex(
-      (v) =>
-        field.split(/__\d$/).length > 1 && v.field === field.split(/__\d$/)[0]
-    );
-    if (idx !== -1)
-      newValidHeaders.push({
-        field,
-        headerName: validHeaders[idx].headerName,
-        editable: true,
-      });
-  });
+  Object.keys(headersRow)
+    .filter((f) => f !== "id")
+    .forEach((field) => {
+      const idx = validHeaders.findIndex(
+        (v) =>
+          field.split(/__\d$/).length > 1 && v.field === field.split(/__\d$/)[0]
+      );
+      const headerName =
+        idx !== -1
+          ? validHeaders[idx].headerName
+          : validHeaders.find((h) => h.field === field)?.headerName;
+
+      newValidHeaders.push({ field, headerName, editable: true });
+    });
 
   return newValidHeaders;
 };
