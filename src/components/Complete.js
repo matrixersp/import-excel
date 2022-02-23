@@ -21,6 +21,7 @@ export default function Complete({ canGoBack, backAction }) {
     () => gridColumns.map((column) => ({ ...column, editable: false })),
     [gridColumns]
   );
+  console.log(gridRows);
 
   return gridRows ? (
     <Box

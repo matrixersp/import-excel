@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Stack, Box, Divider, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import XLSX from "xlsx";
-import { useDispatch } from "react-redux";
-import { setRows } from "../actions/index";
+import { useDispatch, useSelector } from "react-redux";
+import { setRows, setHeaders } from "../actions/index";
 import { useDialog } from "../hooks/useDialog";
 
 const Input = styled("input")({
@@ -17,6 +17,7 @@ export default function Upload({
   nextDialogProps,
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
+  const validHeaders = useSelector(({ appReducer }) => appReducer.validHeaders);
   const { handleClickOpen, AlertDialog: NextDialog } = useDialog();
   const dispatch = useDispatch();
 
@@ -54,6 +55,25 @@ export default function Upload({
     });
 
     dispatch(setRows(selectedRows));
+    const headers = getHeaders(selectedRows[0]);
+    dispatch(setHeaders(headers));
+  };
+
+  const getHeaders = (headersRow) => {
+    return Object.entries(headersRow).reduce(
+      (acc, cur) =>
+        acc.concat({
+          label: cur[0],
+          headerName: headerNameExists(cur[1]) ? cur[1] : "",
+        }),
+      []
+    );
+  };
+
+  const headerNameExists = (headerName) => {
+    return validHeaders.some(
+      (validHeader) => validHeader.headerName === headerName
+    );
   };
 
   useEffect(() => {

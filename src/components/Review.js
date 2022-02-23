@@ -12,7 +12,7 @@ export default function Review({
   backAction,
   nextAction,
 }) {
-  const { gridRows, gridColumns, rows, validHeaders, ignoredColumns } =
+  const { gridRows, gridColumns, rows, validHeaders, headers, ignoredColumns } =
     useSelector(({ appReducer }) => appReducer);
   const { handleClose, handleClickOpen, AlertDialog: BackDialog } = useDialog();
   const [editedRows, setEditedRows] = useState({});
@@ -26,13 +26,10 @@ export default function Review({
     const rowsWithHeaders = getRowsWithHeaders(
       rows,
       validHeaders,
+      headers,
       ignoredColumns
     );
-    const gridColumns = getValidHeaders(
-      rowsWithHeaders[0],
-      validHeaders,
-      rowsWithHeaders
-    );
+    const gridColumns = orderHeaders(validHeaders, rowsWithHeaders);
     dispatch(setGridRows(rowsWithHeaders));
     dispatch(setGridColumns(gridColumns));
   }, []);
@@ -81,10 +78,10 @@ export default function Review({
   );
 
   const handleConfirm = () => {
-    backAction(() => true);
-    handleClose();
     dispatch(setGridRows([]));
     dispatch(setGridColumns([]));
+    handleClose();
+    backAction(() => true);
   };
 
   return gridRows?.length > 0 ? (
@@ -142,50 +139,38 @@ export default function Review({
   );
 }
 
-const getRowsWithHeaders = (rows, validHeaders, ignoredColumns) => {
-  let headers = Object.entries(rows[0]);
+const getPickedHeaders = (headers, ignoredColumns) => {
+  return headers.filter(
+    (h) => h.headerName && !ignoredColumns.includes(h.label)
+  );
+};
+
+const getRowsWithHeaders = (rows, validHeaders, headers, ignoredColumns) => {
+  const pickedHeaders = getPickedHeaders(headers, ignoredColumns);
   let headersWithFields = [];
 
-  headers.forEach((header) => {
-    let [label, headerName] = header;
-
-    if (!ignoredColumns.includes(label)) {
-      let field = validHeaders.find((v) => v.headerName === header[1])?.field;
-      if (field) headersWithFields.push({ label, field, headerName });
-    }
+  pickedHeaders.forEach((header) => {
+    const { label, headerName } = header;
+    const field = validHeaders.find((v) => v.headerName === headerName)?.field;
+    if (field) headersWithFields.push({ label, field, headerName });
   });
 
   return rows.slice(1).map((row) => {
     let newRow = { id: row.__rowNum__ };
-    let fieldCount = {};
     headersWithFields.forEach((header) => {
-      fieldCount[header.field] = (fieldCount[header.field] || 0) + 1;
-
-      const count = fieldCount[header.field];
-      if (count > 1) newRow[header.field + "__" + count] = row[header.label];
-      else newRow[header.field] = row[header.label];
+      newRow[header.field] = row[header.label];
     });
     return newRow;
   });
 };
 
-const getValidHeaders = (headersRow, validHeaders, rows) => {
-  let newValidHeaders = [];
-
-  Object.keys(headersRow)
+const orderHeaders = (validHeaders, rows) => {
+  return Object.keys(rows[0])
     .filter((f) => f !== "id")
-    .forEach((field) => {
-      const idx = validHeaders.findIndex(
-        (v) =>
-          field.split(/__\d$/).length > 1 && v.field === field.split(/__\d$/)[0]
-      );
-      const headerName =
-        idx !== -1
-          ? validHeaders[idx].headerName
-          : validHeaders.find((h) => h.field === field)?.headerName;
-
-      newValidHeaders.push({ field, headerName, editable: true });
+    .map((field) => {
+      const headerName = validHeaders.find(
+        (h) => h.field === field
+      )?.headerName;
+      return { field, headerName, editable: true };
     });
-
-  return newValidHeaders;
 };

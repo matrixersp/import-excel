@@ -5,6 +5,11 @@ export const setRows = (rows) => ({
   payload: rows,
 });
 
+export const setHeaders = (headers) => ({
+  type: appConstants.SET_HEADERS,
+  payload: headers,
+});
+
 export const setHeader = (headerName, columnLabel) => ({
   type: appConstants.SET_HEADER,
   payload: { headerName, columnLabel },
@@ -18,6 +23,10 @@ export const ignoreColumn = (columnLabel) => ({
 export const reconsiderColumn = (columnLabel) => ({
   type: appConstants.RECONSIDER_COLUMN,
   payload: columnLabel,
+});
+
+export const resetIgnoredColumns = () => ({
+  type: appConstants.RESET_IGNORED_COLUMNS,
 });
 
 export const setGridRows = (rows) => ({

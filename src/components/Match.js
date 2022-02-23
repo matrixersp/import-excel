@@ -19,12 +19,23 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import { useDialog } from "../hooks/useDialog";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Stack, Typography } from "@mui/material";
-import { ignoreColumn, reconsiderColumn, setHeader } from "../actions";
+import {
+  ignoreColumn,
+  reconsiderColumn,
+  resetIgnoredColumns,
+  setHeader,
+} from "../actions";
 import { validationSchema } from "./validationSchema";
 
 const hasHeader = true;
+
+const dialogTitles = {
+  FOUND_DUPLICATE_HEADERS:
+    "Sorry, several columns are matched to duplicate fields",
+  NO_MATCHED_HEADERS_FOUND: "Sorry, there are no matched fields",
+};
 
 export default function Match({
   canGoNext,
@@ -33,22 +44,55 @@ export default function Match({
   nextAction,
   backDialogProps,
 }) {
-  const { rows, validHeaders, ignoredColumns } = useSelector(
+  const { rows, validHeaders, headers, ignoredColumns } = useSelector(
     ({ appReducer }) => appReducer
   );
-  const { handleClose, handleClickOpen, AlertDialog: BackDialog } = useDialog();
+  const [dialogTitle, setDialogTitle] = useState("");
+  const {
+    handleClose: handleCloseBack,
+    handleClickOpen: handleClickOpenBack,
+    AlertDialog: BackDialog,
+  } = useDialog();
+  const { handleClickOpen: handleClickOpenNext, AlertDialog: NextDialog } =
+    useDialog();
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (canGoBack) backAction(handleClickOpen);
-    if (canGoNext) nextAction(() => true);
+    if (canGoBack) backAction(handleClickOpenBack);
+    if (canGoNext) nextAction(handleNext);
   }, [canGoBack, canGoNext]);
 
-  const handleConfirm = () => {
-    handleClose();
-    backAction(() => true);
+  const nonIgnoredHeaders = useMemo(() => {
+    return headers.filter((h) => !ignoredColumns.includes(h.label));
+  }, [headers, ignoredColumns]);
+
+  const foundDuplicates = () => {
+    const headerNames = nonIgnoredHeaders
+      .map((h) => h.headerName)
+      .filter((h) => h);
+    const uniqueHeaderNames = new Set(headerNames);
+    return uniqueHeaderNames.size !== headerNames.length;
   };
 
-  const headers = Object.entries(rows[0]);
+  const foundMatchedHeaders = () => {
+    return nonIgnoredHeaders.filter((h) => h.headerName).length > 0;
+  };
+
+  const handleNext = () => {
+    if (foundDuplicates()) {
+      setDialogTitle(dialogTitles.FOUND_DUPLICATE_HEADERS);
+      handleClickOpenNext();
+    } else if (!foundMatchedHeaders()) {
+      setDialogTitle(dialogTitles.NO_MATCHED_HEADERS_FOUND);
+      handleClickOpenNext();
+    } else nextAction(() => true);
+  };
+
+  const handleConfirmBack = () => {
+    dispatch(resetIgnoredColumns([]));
+    handleCloseBack();
+    backAction(() => true);
+  };
 
   return (
     <Box
@@ -64,8 +108,8 @@ export default function Match({
             <TableComponent
               rows={hasHeader ? rows.slice(1) : rows}
               validHeaders={validHeaders}
-              columnLabel={header[0]}
-              headerName={header[1]}
+              columnLabel={header.label}
+              headerName={header.headerName}
               ignoredColumns={ignoredColumns}
               idx={idx}
               validationSchema={validationSchema}
@@ -79,13 +123,14 @@ export default function Match({
           "Are you sure you want to clear all changes to data in progress in this stage?"
         }
       >
-        <Button onClick={handleClose} variant="outlined">
+        <Button onClick={handleCloseBack} variant="outlined">
           Cancel
         </Button>
-        <Button onClick={handleConfirm} variant="contained">
+        <Button onClick={handleConfirmBack} variant="contained">
           Confirm
         </Button>
       </BackDialog>
+      <NextDialog title={dialogTitle} />
     </Box>
   );
 }
