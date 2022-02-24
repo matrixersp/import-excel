@@ -43,23 +43,6 @@ export default function Review({
       });
   }, [canGoBack, canGoNext]);
 
-  const extendedSchema = useMemo(() => {
-    const fields = gridColumns
-      ?.filter((c) => c.field !== "id")
-      ?.map((c) => c.field);
-    let extendedSchema = validationSchema;
-
-    fields?.forEach((field) => {
-      if (field.split(/__\d$/).length > 1) {
-        extendedSchema = validationSchema.shape({
-          [field]: validationSchema.fields[field.split(/__\d$/)[0]],
-        });
-      }
-    });
-
-    return extendedSchema;
-  }, [gridColumns]);
-
   const getValidColumns = useMemo(
     () =>
       gridColumns?.map((header) => {
@@ -67,14 +50,14 @@ export default function Review({
           ...header,
           cellClassName: (params) => {
             try {
-              extendedSchema.validateSyncAt(header.field, params.row);
+              validationSchema.validateSyncAt(header.field, params.row);
             } catch (error) {
               return "validation-error";
             }
           },
         };
       }),
-    [gridColumns, extendedSchema]
+    [gridColumns]
   );
 
   const handleConfirm = () => {
