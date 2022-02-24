@@ -40,7 +40,7 @@ export default function Complete({ canGoBack, backAction }) {
         columns={getGridColumns}
         pageSize={10}
         rowsPerPageOptions={[10, 25, 50]}
-        rowHeight={35}
+        rowHeight={40}
         checkboxSelection
         disableSelectionOnClick
       />

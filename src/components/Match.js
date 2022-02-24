@@ -33,7 +33,7 @@ const hasHeader = true;
 
 const dialogTitles = {
   FOUND_DUPLICATE_HEADERS:
-    "Sorry, several columns are matched to duplicate fields",
+    "Sorry, some columns are matched to duplicate fields",
   NO_MATCHED_HEADERS_FOUND: "Sorry, there are no matched fields",
 };
 
@@ -214,10 +214,10 @@ function TableComponent({
 
   const isDuplicateHeaderName = () => {
     const filtered = headers.filter(
-      (header) => !ignoredColumns.includes(header[0])
+      (header) => !ignoredColumns.includes(header.label)
     );
     return (
-      filtered.filter((header) => header[1] === currentHeaderName).length > 1
+      filtered.filter((h) => h.headerName === currentHeaderName).length > 1
     );
   };
 

@@ -1,10 +1,24 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Box, Card, CardHeader, Button } from "@mui/material";
+import { Box, Card, CardHeader, Button, Typography } from "@mui/material";
+import Tooltip, { tooltipClasses } from "@mui/material/Tooltip";
+import { styled } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
 import { setGridRows, setGridColumns, updateEditedGridRows } from "../actions";
 import { validationSchema } from "./validationSchema";
 import { useDialog } from "../hooks/useDialog";
+
+const HtmlTooltip = styled(({ className, ...props }) => (
+  <Tooltip {...props} classes={{ popper: className }} />
+))(({ theme }) => ({
+  [`& .${tooltipClasses.tooltip}`]: {
+    backgroundColor: theme.palette.error.light,
+    color: theme.palette.common.white,
+    maxWidth: 250,
+    fontSize: theme.typography.pxToRem(12),
+    border: `1px solid ${theme.palette.error.dark}`,
+  },
+}));
 
 export default function Review({
   canGoNext,
@@ -17,6 +31,7 @@ export default function Review({
   const { handleClose, handleClickOpen, AlertDialog: BackDialog } = useDialog();
   const [editedRows, setEditedRows] = useState({});
   const dispatch = useDispatch();
+  const [validationErrors, setValidationErrors] = useState({});
 
   const saveEditedGridRows = () => {
     dispatch(updateEditedGridRows(editedRows));
@@ -32,6 +47,7 @@ export default function Review({
     const gridColumns = orderHeaders(validHeaders, rowsWithHeaders);
     dispatch(setGridRows(rowsWithHeaders));
     dispatch(setGridColumns(gridColumns));
+    validateRows(rowsWithHeaders);
   }, []);
 
   useEffect(() => {
@@ -43,21 +59,81 @@ export default function Review({
       });
   }, [canGoBack, canGoNext]);
 
+  const validateRows = (rows) => {
+    const errors = {};
+    rows.forEach((row) => {
+      errors[row.id] = {};
+      Object.entries(row).forEach((entry) => {
+        try {
+          validationSchema.validateSyncAt(entry[0], row);
+        } catch (err) {
+          errors[row.id][entry[0]] = {
+            name: err.name,
+            errors: err.errors,
+          };
+        }
+      });
+    });
+    setValidationErrors(errors);
+  };
+
+  const validateCell = (cell) => {
+    try {
+      validationSchema.validateSyncAt(cell.field, { [cell.field]: cell.value });
+      delete validationErrors[cell.id][cell.field];
+    } catch (err) {
+      setValidationErrors((errors) => ({
+        ...errors,
+        [cell.id]: {
+          ...errors[cell.id],
+          [cell.field]: {
+            name: err.name,
+            errors: err.errors,
+          },
+        },
+      }));
+    }
+  };
+
   const getValidColumns = useMemo(
     () =>
       gridColumns?.map((header) => {
         return {
           ...header,
           cellClassName: (params) => {
-            try {
-              validationSchema.validateSyncAt(header.field, params.row);
-            } catch (error) {
+            if (validationErrors[params.id][params.field])
               return "validation-error";
-            }
+          },
+          renderCell: (params) => {
+            const err = validationErrors[params.id][params.field];
+            if (err)
+              return (
+                <HtmlTooltip
+                  title={
+                    <>
+                      <Typography color="inherit">{err.name}:</Typography>
+                      <ul style={{ paddingLeft: 16, margin: "5px 0px" }}>
+                        {err.errors.map((item, idx) => (
+                          <li key={idx}>
+                            <Typography
+                              color="inherit"
+                              sx={{ fontSize: "0.875rem" }}
+                            >
+                              {item}
+                            </Typography>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  }
+                >
+                  <span>{params.value || <em>No Data</em>}</span>
+                </HtmlTooltip>
+              );
           },
         };
       }),
-    [gridColumns]
+    [gridColumns, validationErrors]
   );
 
   const handleConfirm = () => {
@@ -74,8 +150,8 @@ export default function Review({
         mt: 3,
         height: 400,
         "& .validation-error": {
-          backgroundColor: "error.light",
-          color: "common.white",
+          backgroundColor: "#ff97a0",
+          color: "text.primary",
         },
       }}
     >
@@ -84,7 +160,7 @@ export default function Review({
         columns={getValidColumns}
         pageSize={10}
         rowsPerPageOptions={[10, 25, 50]}
-        rowHeight={35}
+        rowHeight={40}
         checkboxSelection
         disableSelectionOnClick
         onCellEditCommit={(cell) => {
@@ -100,6 +176,7 @@ export default function Review({
             };
             return state;
           });
+          validateCell(cell);
         }}
       />
       <BackDialog
@@ -154,6 +231,6 @@ const orderHeaders = (validHeaders, rows) => {
       const headerName = validHeaders.find(
         (h) => h.field === field
       )?.headerName;
-      return { field, headerName, editable: true };
+      return { field, headerName, editable: true, width: 200 };
     });
 };
