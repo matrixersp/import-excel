@@ -3,8 +3,8 @@ import rootReducer from "./reducers";
 
 const columns: GridColDef[] = [
   { field: "id", hide: true },
-  { field: "name", headerName: "Full Name", width: 350, editable: true },
-  { field: "email", headerName: "Email", width: 250, editable: true },
+  { field: "name", headerName: "Full Name", width: 200, editable: true },
+  { field: "email", headerName: "Email", width: 200, editable: true },
 ];
 
 export const store = createStore(

@@ -3,7 +3,7 @@ import { Stack, Box, Divider, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import XLSX from "xlsx";
 import { useDispatch, useSelector } from "react-redux";
-import { setRows, setHeaders } from "../actions/index";
+import { setRows, setHeaders, setIgnoredColumns } from "../actions/index";
 import { useDialog } from "../hooks/useDialog";
 
 const Input = styled("input")({
@@ -57,6 +57,8 @@ export default function Upload({
     dispatch(setRows(selectedRows));
     const headers = getHeaders(selectedRows[0]);
     dispatch(setHeaders(headers));
+    const ignoredColumns = getIgnoredColumns(headers);
+    dispatch(setIgnoredColumns(ignoredColumns));
   };
 
   const getHeaders = (headersRow) => {
@@ -74,6 +76,19 @@ export default function Upload({
     return validHeaders.some(
       (validHeader) => validHeader.headerName === headerName
     );
+  };
+
+  const getIgnoredColumns = (headers) => {
+    let headersCount = {};
+    let ignoredColumns = [];
+    headers.forEach((h) => {
+      headersCount[h.headerName] = ++headersCount[h.headerName] || 1;
+      const header = validHeaders.find((v) => v.headerName === h.headerName);
+      if (header && headersCount[h.headerName] > 1)
+        ignoredColumns.push(h.label);
+    });
+
+    return ignoredColumns;
   };
 
   useEffect(() => {

@@ -15,6 +15,11 @@ export const setHeader = (headerName, columnLabel) => ({
   payload: { headerName, columnLabel },
 });
 
+export const setIgnoredColumns = (columns) => ({
+  type: appConstants.SET_IGNORED_COLUMNS,
+  payload: columns,
+});
+
 export const ignoreColumn = (columnLabel) => ({
   type: appConstants.IGNORE_COLUMN,
   payload: columnLabel,

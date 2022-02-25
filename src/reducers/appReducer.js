@@ -28,6 +28,10 @@ const appReducer = (state = initialState, { type, payload }) => {
       return { ...state, headers };
     }
 
+    case appConstants.SET_IGNORED_COLUMNS: {
+      return { ...state, ignoredColumns: payload };
+    }
+
     case appConstants.IGNORE_COLUMN: {
       const ignoredColumns = [...state.ignoredColumns, payload];
       return { ...state, ignoredColumns };

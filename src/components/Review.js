@@ -228,9 +228,9 @@ const orderHeaders = (validHeaders, rows) => {
   return Object.keys(rows[0])
     .filter((f) => f !== "id")
     .map((field) => {
-      const headerName = validHeaders.find(
+      const { headerName, width, editable } = validHeaders.find(
         (h) => h.field === field
-      )?.headerName;
-      return { field, headerName, editable: true, width: 200 };
+      );
+      return { field, headerName, width, editable };
     });
 };
