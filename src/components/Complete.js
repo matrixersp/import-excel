@@ -4,17 +4,20 @@ import { Box, Card, CardHeader, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useSelector } from "react-redux";
 
-export default function Complete({ canGoBack, backAction }) {
+export default function Complete({ backClicked, handleBack, setBackClicked }) {
   let { gridRows, gridColumns } = useSelector(({ appReducer }) => appReducer);
   const { handleClose, handleClickOpen, AlertDialog: BackDialog } = useDialog();
 
   useEffect(() => {
-    if (canGoBack) backAction(handleClickOpen);
-  }, [canGoBack]);
+    if (backClicked) {
+      handleClickOpen();
+      setBackClicked();
+    }
+  }, [backClicked]);
 
   const handleConfirm = () => {
     handleClose();
-    backAction(() => true);
+    handleBack();
   };
 
   const getGridColumns = useMemo(
@@ -41,8 +44,6 @@ export default function Complete({ canGoBack, backAction }) {
         pageSize={10}
         rowsPerPageOptions={[10, 25, 50]}
         rowHeight={40}
-        checkboxSelection
-        disableSelectionOnClick
       />
       <BackDialog
         title={

@@ -4,21 +4,14 @@ import { styled } from "@mui/material/styles";
 import XLSX from "xlsx";
 import { useDispatch, useSelector } from "react-redux";
 import { setRows, setHeaders, setIgnoredColumns } from "../actions/index";
-import { useDialog } from "../hooks/useDialog";
 
 const Input = styled("input")({
   display: "none",
 });
 
-export default function Upload({
-  canGoNext,
-  canGoBack,
-  nextAction,
-  nextDialogProps,
-}) {
+export default function Upload({ formId, handleNext, setNextEnabled }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const validHeaders = useSelector(({ appReducer }) => appReducer.validHeaders);
-  const { handleClickOpen, AlertDialog: NextDialog } = useDialog();
   const dispatch = useDispatch();
 
   const handleFileChange = (event) => {
@@ -44,7 +37,8 @@ export default function Upload({
     setSelectedFile(e.dataTransfer.files[0]);
   };
 
-  const submit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const data = await selectedFile.arrayBuffer();
     let workbook = XLSX.read(data);
 
@@ -59,6 +53,7 @@ export default function Upload({
     dispatch(setHeaders(headers));
     const ignoredColumns = getIgnoredColumns(headers);
     dispatch(setIgnoredColumns(ignoredColumns));
+    handleNext();
   };
 
   const getHeaders = (headersRow) => {
@@ -92,17 +87,8 @@ export default function Upload({
   };
 
   useEffect(() => {
-    if (canGoNext)
-      nextAction(async () => {
-        if (!selectedFile) {
-          handleClickOpen();
-          return false;
-        } else {
-          await submit();
-          return true;
-        }
-      });
-  }, [canGoNext]);
+    if (selectedFile) setNextEnabled(true);
+  }, [selectedFile]);
 
   return (
     <Box
@@ -112,6 +98,9 @@ export default function Upload({
         m: 2,
         mt: 3,
       }}
+      component="form"
+      id={formId}
+      onSubmit={handleSubmit}
     >
       <Stack
         onDrop={handleDrop}
@@ -162,9 +151,6 @@ export default function Upload({
           </Typography>
         </Box>
       </Stack>
-      <NextDialog
-        title={"Please upload a .csv, .tsv or .txt file then click next."}
-      />
     </Box>
   );
 }

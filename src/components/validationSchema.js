@@ -7,8 +7,9 @@ export const validationSchema = yup.object().shape({
     .trim()
     .matches(
       /(^[A-Za-z]{3,16})([ ]{0,1})([A-Za-z]{3,16})?([ ]{0,1})?([A-Za-z]{3,16})?([ ]{0,1})?([A-Za-z]{3,16})/,
-      "Full name is not valid"
+      "${path} is not valid"
     )
-    .required(),
-  email: yup.string().trim().email().required(),
+    .required()
+    .label("Full Name"),
+  email: yup.string().trim().email().required().label("Email"),
 });

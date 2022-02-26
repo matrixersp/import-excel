@@ -21,10 +21,11 @@ const HtmlTooltip = styled(({ className, ...props }) => (
 }));
 
 export default function Review({
-  canGoNext,
-  canGoBack,
-  backAction,
-  nextAction,
+  backClicked,
+  formId,
+  handleNext,
+  handleBack,
+  setBackClicked,
 }) {
   const { gridRows, gridColumns, rows, validHeaders, headers, ignoredColumns } =
     useSelector(({ appReducer }) => appReducer);
@@ -51,13 +52,17 @@ export default function Review({
   }, []);
 
   useEffect(() => {
-    if (canGoBack) backAction(handleClickOpen);
-    if (canGoNext)
-      nextAction(async () => {
-        await saveEditedGridRows();
-        return true;
-      });
-  }, [canGoBack, canGoNext]);
+    if (backClicked) {
+      handleClickOpen();
+      setBackClicked();
+    }
+  }, [backClicked]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    saveEditedGridRows();
+    handleNext();
+  };
 
   const validateRows = (rows) => {
     const errors = {};
@@ -140,7 +145,7 @@ export default function Review({
     dispatch(setGridRows([]));
     dispatch(setGridColumns([]));
     handleClose();
-    backAction(() => true);
+    handleBack();
   };
 
   return gridRows?.length > 0 ? (
@@ -154,6 +159,9 @@ export default function Review({
           color: "text.primary",
         },
       }}
+      component="form"
+      id={formId}
+      onSubmit={handleSubmit}
     >
       <DataGrid
         rows={gridRows}
@@ -161,8 +169,6 @@ export default function Review({
         pageSize={10}
         rowsPerPageOptions={[10, 25, 50]}
         rowHeight={40}
-        checkboxSelection
-        disableSelectionOnClick
         onCellEditCommit={(cell) => {
           setEditedRows((state) => {
             const row = gridRows.find((row) => row.id === cell.id);
@@ -184,7 +190,7 @@ export default function Review({
           "Are you sure you want to clear all changes to data in progress in this stage?"
         }
       >
-        <Button onClick={handleClose} variant="outlined">
+        <Button onClick={handleClose} variant="outlined" autoFocus>
           Cancel
         </Button>
         <Button onClick={handleConfirm} variant="contained">

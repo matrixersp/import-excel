@@ -38,11 +38,11 @@ const dialogTitles = {
 };
 
 export default function Match({
-  canGoNext,
-  canGoBack,
-  backAction,
-  nextAction,
-  backDialogProps,
+  backClicked,
+  formId,
+  handleNext,
+  handleBack,
+  setBackClicked,
 }) {
   const { rows, validHeaders, headers, ignoredColumns } = useSelector(
     ({ appReducer }) => appReducer
@@ -58,9 +58,11 @@ export default function Match({
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (canGoBack) backAction(handleClickOpenBack);
-    if (canGoNext) nextAction(handleNext);
-  }, [canGoBack, canGoNext]);
+    if (backClicked) {
+      handleClickOpenBack();
+      setBackClicked(false);
+    }
+  }, [backClicked]);
 
   const nonIgnoredHeaders = useMemo(() => {
     return headers.filter((h) => !ignoredColumns.includes(h.label));
@@ -78,20 +80,21 @@ export default function Match({
     return nonIgnoredHeaders.filter((h) => h.headerName).length > 0;
   };
 
-  const handleNext = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
     if (foundDuplicates()) {
       setDialogTitle(dialogTitles.FOUND_DUPLICATE_HEADERS);
       handleClickOpenNext();
     } else if (!foundMatchedHeaders()) {
       setDialogTitle(dialogTitles.NO_MATCHED_HEADERS_FOUND);
       handleClickOpenNext();
-    } else nextAction(() => true);
+    } else handleNext();
   };
 
   const handleConfirmBack = () => {
     dispatch(resetIgnoredColumns([]));
     handleCloseBack();
-    backAction(() => true);
+    handleBack();
   };
 
   return (
@@ -101,6 +104,9 @@ export default function Match({
         mt: 3,
         "&>:not(:first-of-type)": { mt: 2 },
       }}
+      component="form"
+      id={formId}
+      onSubmit={handleSubmit}
     >
       {headers.map((header, idx) => {
         return (
@@ -123,7 +129,7 @@ export default function Match({
           "Are you sure you want to clear all changes to data in progress in this stage?"
         }
       >
-        <Button onClick={handleCloseBack} variant="outlined">
+        <Button onClick={handleCloseBack} variant="outlined" autoFocus>
           Cancel
         </Button>
         <Button onClick={handleConfirmBack} variant="contained">
