@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Stack, Box, Divider, Button, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import { useDispatch, useSelector } from "react-redux";
 import { setRows, setHeaders, setIgnoredColumns } from "../actions/index";
 
