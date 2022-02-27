@@ -20,6 +20,8 @@ const HtmlTooltip = styled(({ className, ...props }) => (
   },
 }));
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export default function Review({
   backClicked,
   formId,
@@ -33,6 +35,9 @@ export default function Review({
   const [editedRows, setEditedRows] = useState({});
   const dispatch = useDispatch();
   const [validationErrors, setValidationErrors] = useState({});
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentRows, setCurrentRows] = useState([]);
 
   const saveEditedGridRows = () => {
     dispatch(updateEditedGridRows(editedRows));
@@ -48,8 +53,12 @@ export default function Review({
     const gridColumns = orderHeaders(validHeaders, rowsWithHeaders);
     dispatch(setGridRows(rowsWithHeaders));
     dispatch(setGridColumns(gridColumns));
-    validateRows(rowsWithHeaders);
+    setCurrentRows(rowsWithHeaders);
   }, []);
+
+  useEffect(() => {
+    validateRows(currentRows.slice(page * pageSize, pageSize * (page + 1)));
+  }, [currentRows, page, pageSize]);
 
   useEffect(() => {
     if (backClicked) {
@@ -79,7 +88,7 @@ export default function Review({
         }
       });
     });
-    setValidationErrors(errors);
+    setValidationErrors((state) => ({ ...state, ...errors }));
   };
 
   const validateCell = (cell) => {
@@ -106,10 +115,14 @@ export default function Review({
         return {
           ...header,
           cellClassName: (params) => {
-            if (validationErrors[params.id][params.field])
+            if (
+              validationErrors[params.id] &&
+              validationErrors[params.id][params.field]
+            )
               return "validation-error";
           },
           renderCell: (params) => {
+            if (!validationErrors[params.id]) return;
             const err = validationErrors[params.id][params.field];
             if (err)
               return (
@@ -148,7 +161,7 @@ export default function Review({
     handleBack();
   };
 
-  return gridRows?.length > 0 ? (
+  return currentRows?.length > 0 ? (
     <Box
       sx={{
         m: 2,
@@ -164,24 +177,27 @@ export default function Review({
       onSubmit={handleSubmit}
     >
       <DataGrid
-        rows={gridRows}
+        rows={currentRows}
         columns={getValidColumns}
-        pageSize={10}
+        pageSize={pageSize}
         rowsPerPageOptions={[10, 25, 50]}
+        onPageSizeChange={(size) => setPageSize(size)}
+        onPageChange={(page) => setPage(page)}
         rowHeight={40}
         onCellEditCommit={(cell) => {
-          setEditedRows((state) => {
-            const row = gridRows.find((row) => row.id === cell.id);
-            state = {
-              ...state,
-              [cell.id]: {
-                ...row,
-                ...state[cell.id],
-                [cell.field]: cell.value,
-              },
-            };
-            return state;
-          });
+          const idx = currentRows.findIndex((row) => row.id === cell.id);
+          currentRows[idx][cell.field] = cell.value;
+          setCurrentRows(currentRows);
+
+          setEditedRows((state) => ({
+            ...state,
+            [cell.id]: {
+              ...gridRows[idx],
+              ...state[cell.id],
+              [cell.field]: cell.value,
+            },
+          }));
+
           validateCell(cell);
         }}
       />
