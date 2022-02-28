@@ -54,7 +54,7 @@ export default function Review({
     dispatch(setGridRows(rowsWithHeaders));
     dispatch(setGridColumns(gridColumns));
     setCurrentRows(rowsWithHeaders);
-  }, []);
+  }, [dispatch, headers, rows, ignoredColumns, validHeaders]);
 
   useEffect(() => {
     validateRows(currentRows.slice(page * pageSize, pageSize * (page + 1)));
@@ -65,7 +65,7 @@ export default function Review({
       handleClickOpen();
       setBackClicked();
     }
-  }, [backClicked]);
+  }, [backClicked, handleClickOpen, setBackClicked]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

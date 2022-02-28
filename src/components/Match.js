@@ -19,7 +19,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import { useDialog } from "../hooks/useDialog";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Stack, Typography } from "@mui/material";
 import {
   ignoreColumn,
@@ -63,7 +63,7 @@ export default function Match({
       handleClickOpenBack();
       setBackClicked(false);
     }
-  }, [backClicked]);
+  }, [backClicked, handleClickOpenBack, setBackClicked]);
 
   const nonIgnoredHeaders = useMemo(() => {
     return headers.filter((h) => !ignoredColumns.includes(h.label));
@@ -159,51 +159,49 @@ function TableComponent({
   const [isEditing, setIsEditing] = useState(!isIgnoredColumn);
   const dispatch = useDispatch();
 
+  const getHeaderField = useCallback(() => {
+    return validHeaders.find(
+      (header) => header.headerName === currentHeaderName
+    )?.field;
+  }, [validHeaders, currentHeaderName]);
+
+  const validateRowsByField = useCallback(
+    (headerField, fieldRows) => {
+      const result = fieldRows.map((row) => {
+        if (!headerField) return false;
+        const fieldToValidate = { [headerField]: row[columnLabel] };
+        try {
+          validationSchema.validateSyncAt(headerField, fieldToValidate);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      });
+
+      let nonValidRowsCount = result.filter((isValidRow) => !isValidRow).length;
+      const nonValidRowsRatio = (nonValidRowsCount * 100) / fieldRows.length;
+      setNonValidRowsRatio(Math.round(nonValidRowsRatio * 10) / 10);
+    },
+    [columnLabel]
+  );
+
+  const computeEmptyRowsRatio = useCallback(() => {
+    const filledRowsCount = rows.filter((row) => row[columnLabel]).length;
+    const emptyRowsRatio = (filledRowsCount * 100) / rows.length;
+    setEmptyRowsRatio(Math.round(emptyRowsRatio * 10) / 10);
+  }, [rows, columnLabel]);
+
   useEffect(() => {
     let headerField = getHeaderField();
     validateRowsByField(headerField, rows);
     computeEmptyRowsRatio();
-  }, []);
-
-  useEffect(() => {
-    let headerField = getHeaderField();
-    validateRowsByField(headerField, rows);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentHeaderName]);
-
-  const getHeaderField = () => {
-    return validHeaders.find(
-      (header) => header.headerName === currentHeaderName
-    )?.field;
-  };
 
   const handleHeaderChange = (e) => {
     const value = e.target.value;
     setCurrentHeaderField(value);
-
     dispatch(setHeader(value, columnLabel));
-  };
-
-  const validateRowsByField = (headerField, fieldRows) => {
-    const result = fieldRows.map((row) => {
-      if (!headerField) return false;
-      const fieldToValidate = { [headerField]: row[columnLabel] };
-      try {
-        validationSchema.validateSyncAt(headerField, fieldToValidate);
-        return true;
-      } catch (err) {
-        return false;
-      }
-    });
-
-    let nonValidRowsCount = result.filter((isValidRow) => !isValidRow).length;
-    const nonValidRowsRatio = (nonValidRowsCount * 100) / fieldRows.length;
-    setNonValidRowsRatio(Math.round(nonValidRowsRatio * 10) / 10);
-  };
-
-  const computeEmptyRowsRatio = () => {
-    const filledRowsCount = rows.filter((row) => row[columnLabel]).length;
-    const emptyRowsRatio = (filledRowsCount * 100) / rows.length;
-    setEmptyRowsRatio(Math.round(emptyRowsRatio * 10) / 10);
   };
 
   const handleConfirmMapping = () => {
@@ -220,14 +218,14 @@ function TableComponent({
     setIsEditing(true);
   };
 
-  const isDuplicateHeaderName = () => {
+  const isDuplicateHeaderName = useMemo(() => {
     const filtered = headers.filter(
       (header) => !ignoredColumns.includes(header.label)
     );
     return (
       filtered.filter((h) => h.headerName === currentHeaderName).length > 1
     );
-  };
+  }, [headers, ignoredColumns, currentHeaderName]);
 
   return (
     <Stack
@@ -421,7 +419,7 @@ function TableComponent({
                     next step).
                   </Typography>
                 ))}
-              {headerName && isDuplicateHeaderName() && (
+              {headerName && isDuplicateHeaderName && (
                 <Typography
                   variant="body2"
                   sx={{
@@ -442,7 +440,7 @@ function TableComponent({
                   variant="contained"
                   sx={{ mr: 1 }}
                   size="small"
-                  disabled={isDuplicateHeaderName()}
+                  disabled={isDuplicateHeaderName}
                 >
                   Confirm mapping
                 </Button>

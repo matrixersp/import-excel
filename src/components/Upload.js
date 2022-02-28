@@ -88,7 +88,7 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
 
   useEffect(() => {
     if (selectedFile) setNextEnabled(true);
-  }, [selectedFile]);
+  }, [selectedFile, setNextEnabled]);
 
   return (
     <Box

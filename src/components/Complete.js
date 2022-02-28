@@ -1,19 +1,22 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDialog } from "../hooks/useDialog";
 import { Box, Card, CardHeader, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useSelector } from "react-redux";
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export default function Complete({ backClicked, handleBack, setBackClicked }) {
   let { gridRows, gridColumns } = useSelector(({ appReducer }) => appReducer);
   const { handleClose, handleClickOpen, AlertDialog: BackDialog } = useDialog();
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   useEffect(() => {
     if (backClicked) {
       handleClickOpen();
       setBackClicked();
     }
-  }, [backClicked]);
+  }, [backClicked, handleClickOpen, setBackClicked]);
 
   const handleConfirm = () => {
     handleClose();
@@ -41,8 +44,9 @@ export default function Complete({ backClicked, handleBack, setBackClicked }) {
       <DataGrid
         rows={gridRows}
         columns={getGridColumns}
-        pageSize={10}
+        pageSize={pageSize}
         rowsPerPageOptions={[10, 25, 50]}
+        onPageSizeChange={(size) => setPageSize(size)}
         rowHeight={40}
       />
       <BackDialog
