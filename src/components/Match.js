@@ -458,7 +458,11 @@ function ColumnHeader({
 
   return (
     <Stack direction="row" sx={{ alignItems: "center" }}>
-      <Typography component="span" variant="body1" sx={{ minWidth: 94 }}>
+      <Typography
+        component="span"
+        variant="body1"
+        sx={{ minWidth: 94, whiteSpace: "nowrap" }}
+      >
         {firstColumn}
       </Typography>
       <ArrowForwardIosIcon
@@ -470,7 +474,7 @@ function ColumnHeader({
         fullWidth
         value={currentHeaderName}
         options={options}
-        filterOptions={headers}
+        filterOptions={() => headers}
         onChange={handleHeaderChange}
         renderInput={(params) => (
           <TextField
@@ -485,7 +489,9 @@ function ColumnHeader({
             }}
           />
         )}
-        sx={{ "& .MuiAutocomplete-clearIndicator": { visibility: "visible" } }}
+        sx={{
+          "& .MuiAutocomplete-clearIndicator": { visibility: "visible" },
+        }}
       />
     </Stack>
   );
