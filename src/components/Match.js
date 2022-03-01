@@ -461,12 +461,12 @@ function ColumnHeader({
       <Typography
         component="span"
         variant="body1"
-        sx={{ minWidth: 100, whiteSpace: "nowrap" }}
+        sx={{ minWidth: 110, whiteSpace: "nowrap" }}
       >
         {firstColumn}
       </Typography>
       <ArrowForwardIosIcon
-        sx={{ mx: 2.5, fontSize: "2rem", color: "#c5c5c5" }}
+        sx={{ ml: 2.5, mr: 1, fontSize: "2rem", color: "#c5c5c5" }}
       />
       <Autocomplete
         id="autocomplete"
