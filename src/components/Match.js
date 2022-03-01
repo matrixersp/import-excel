@@ -446,15 +446,13 @@ function ColumnHeader({
   currentHeaderName,
   handleHeaderChange,
 }) {
-  const column = String(row[columnLabel]);
-
-  const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
-
   const headers = validHeaders
     .filter((v) => v.headerName)
     .map((v) => v.headerName);
+  const [options, setOptions] = useState(headers);
 
-  const options = [currentHeaderName, ...headers];
+  const column = String(row[columnLabel]);
+  const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
 
   return (
     <Stack direction="row" sx={{ alignItems: "center" }}>
@@ -473,9 +471,16 @@ function ColumnHeader({
         autoHighlight
         fullWidth
         value={currentHeaderName}
-        options={options}
-        filterOptions={() => headers}
+        options={[currentHeaderName, ...headers]}
+        filterOptions={() => options}
         onChange={handleHeaderChange}
+        onInputChange={(_, value) => {
+          const filteredOptions = headers.filter((header) => {
+            let re = new RegExp(value, "i");
+            return header.match(re);
+          });
+          setOptions(filteredOptions);
+        }}
         renderInput={(params) => (
           <TextField
             {...params}
