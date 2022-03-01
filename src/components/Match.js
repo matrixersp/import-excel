@@ -286,7 +286,7 @@ function TableComponent({
           <TableContainer
             component={Paper}
             key={currentHeaderName}
-            sx={{ width: 480 }}
+            sx={{ width: 490 }}
           >
             <Table aria-label="simple table">
               <TableHead>
@@ -446,10 +446,9 @@ function ColumnHeader({
   currentHeaderName,
   handleHeaderChange,
 }) {
-  const column = row[columnLabel];
+  const column = String(row[columnLabel]);
 
-  const firstColumn =
-    column.length < 12 ? column : String(column).slice(0, 12) + "...";
+  const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
 
   const headers = validHeaders
     .filter((v) => v.headerName)
@@ -462,7 +461,7 @@ function ColumnHeader({
       <Typography
         component="span"
         variant="body1"
-        sx={{ minWidth: 94, whiteSpace: "nowrap" }}
+        sx={{ minWidth: 100, whiteSpace: "nowrap" }}
       >
         {firstColumn}
       </Typography>
