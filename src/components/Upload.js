@@ -10,17 +10,11 @@ const Input = styled("input")({
   display: "none",
 });
 
-const dialogTitles = {
-  NO_ROWS_FOUND: "No rows found",
-  NO_MATCHED_HEADERS_FOUND: "Sorry, there are no matched fields",
-};
-
 export default function Upload({ formId, handleNext, setNextEnabled }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const validHeaders = useSelector(({ appReducer }) => appReducer.validHeaders);
   const dispatch = useDispatch();
   const { handleClickOpen, AlertDialog } = useDialog();
-  const [dialogTitle, setDialogTitle] = useState("");
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -57,7 +51,6 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
     });
 
     if (selectedRows.length <= 1) {
-      setDialogTitle(dialogTitles.NO_ROWS_FOUND);
       handleClickOpen();
     } else {
       dispatch(setRows(selectedRows));
@@ -164,7 +157,7 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
           </Typography>
         </Box>
       </Stack>
-      <AlertDialog title={dialogTitle} />
+      <AlertDialog title={"No rows found"} />
     </Box>
   );
 }
