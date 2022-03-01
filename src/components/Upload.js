@@ -4,15 +4,23 @@ import { styled } from "@mui/material/styles";
 import * as XLSX from "xlsx";
 import { useDispatch, useSelector } from "react-redux";
 import { setRows, setHeaders, setIgnoredColumns } from "../actions/index";
+import { useDialog } from "../hooks/useDialog";
 
 const Input = styled("input")({
   display: "none",
 });
 
+const dialogTitles = {
+  NO_ROWS_FOUND: "No rows found",
+  NO_MATCHED_HEADERS_FOUND: "Sorry, there are no matched fields",
+};
+
 export default function Upload({ formId, handleNext, setNextEnabled }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const validHeaders = useSelector(({ appReducer }) => appReducer.validHeaders);
   const dispatch = useDispatch();
+  const { handleClickOpen, AlertDialog } = useDialog();
+  const [dialogTitle, setDialogTitle] = useState("");
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -48,12 +56,17 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
       defval: "",
     });
 
-    dispatch(setRows(selectedRows));
-    const headers = getHeaders(selectedRows[0]);
-    dispatch(setHeaders(headers));
-    const ignoredColumns = getIgnoredColumns(headers);
-    dispatch(setIgnoredColumns(ignoredColumns));
-    handleNext();
+    if (selectedRows.length <= 1) {
+      setDialogTitle(dialogTitles.NO_ROWS_FOUND);
+      handleClickOpen();
+    } else {
+      dispatch(setRows(selectedRows));
+      const headers = getHeaders(selectedRows[0]);
+      dispatch(setHeaders(headers));
+      const ignoredColumns = getIgnoredColumns(headers);
+      dispatch(setIgnoredColumns(ignoredColumns));
+      handleNext();
+    }
   };
 
   const getHeaders = (headersRow) => {
@@ -151,6 +164,7 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
           </Typography>
         </Box>
       </Stack>
+      <AlertDialog title={dialogTitle} />
     </Box>
   );
 }
