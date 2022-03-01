@@ -1,9 +1,40 @@
 import { useState } from "react";
-import Box from "@mui/material/Box";
-import Stepper from "@mui/material/Stepper";
-import Step from "@mui/material/Step";
-import StepLabel from "@mui/material/StepLabel";
-import Button from "@mui/material/Button";
+import {
+  Box,
+  Stepper,
+  Step,
+  StepLabel,
+  Button,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+
+const StepIconRoot = styled("div")(({ theme, ownerState }) => ({
+  color: theme.palette.mode === "dark" ? theme.palette.grey[700] : "#eaeaf0",
+  display: "flex",
+  height: 22,
+  alignItems: "center",
+  ...(ownerState.active && {
+    color: theme.palette.primary.main,
+  }),
+  "& .StepIcon-completedIcon": {
+    color: theme.palette.primary.main,
+    zIndex: 1,
+    fontSize: 18,
+  },
+}));
+
+function StepIcon(props) {
+  const { active, completed, className } = props;
+  return (
+    <StepIconRoot ownerState={{ active }} className={className}>
+      {completed && <CheckCircleIcon className="StepIcon-completedIcon" />}
+    </StepIconRoot>
+  );
+}
 
 export default function StepperComponent({ steps }) {
   const [activeStep, setActiveStep] = useState(0);
@@ -25,17 +56,31 @@ export default function StepperComponent({ steps }) {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Stepper activeStep={activeStep}>
-        {steps.map(({ label }, index) => {
-          const stepProps = {};
-          const labelProps = {};
-          return (
-            <Step key={label} {...stepProps}>
-              <StepLabel {...labelProps}>{label}</StepLabel>
-            </Step>
-          );
-        })}
-      </Stepper>
+      <Stack direction="row" justifyContent="space-between">
+        <Typography component="h1" variant="h5">
+          Bulk add Contacts
+        </Typography>
+        <Stepper
+          activeStep={activeStep}
+          connector={
+            <ArrowForwardIosIcon
+              sx={{ fontSize: "1.2rem", color: "#e5e5e5" }}
+            />
+          }
+        >
+          {steps.map(({ label }, index) => {
+            const stepProps = {};
+            const labelProps = {};
+            return (
+              <Step key={label} {...stepProps}>
+                <StepLabel {...labelProps} StepIconComponent={StepIcon}>
+                  {label}
+                </StepLabel>
+              </Step>
+            );
+          })}
+        </Stepper>
+      </Stack>
       <StepComponent
         formId={formId}
         nextEnabled={nextEnabled}

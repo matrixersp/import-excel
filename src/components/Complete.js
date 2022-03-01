@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useDialog } from "../hooks/useDialog";
-import { Box, Card, CardHeader, Button } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
 import { useSelector } from "react-redux";
+import { Box, Card, CardHeader, Button, Typography } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { useDialog } from "../hooks/useDialog";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -24,7 +24,23 @@ export default function Complete({ backClicked, handleBack, setBackClicked }) {
   };
 
   const getGridColumns = useMemo(
-    () => gridColumns.map((column) => ({ ...column, editable: false })),
+    () =>
+      gridColumns.map((column) => ({
+        ...column,
+        editable: false,
+        renderCell: (params) => {
+          if (params.field === "id")
+            return (
+              <Typography
+                component="span"
+                align="center"
+                sx={{ width: "100%" }}
+              >
+                {params.value}
+              </Typography>
+            );
+        },
+      })),
     [gridColumns]
   );
   console.log(gridRows);
@@ -34,7 +50,7 @@ export default function Complete({ backClicked, handleBack, setBackClicked }) {
       sx={{
         m: 2,
         mt: 3,
-        height: 400,
+        height: 525,
         "& .validation-error": {
           backgroundColor: "error.light",
           color: "common.white",

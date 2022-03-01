@@ -77,16 +77,18 @@ export default function Review({
     const errors = {};
     rows.forEach((row) => {
       errors[row.id] = {};
-      Object.entries(row).forEach((entry) => {
-        try {
-          validationSchema.validateSyncAt(entry[0], row);
-        } catch (err) {
-          errors[row.id][entry[0]] = {
-            name: err.name,
-            errors: err.errors,
-          };
-        }
-      });
+      Object.entries(row)
+        .filter((entry) => entry[0] !== "id")
+        .forEach((entry) => {
+          try {
+            validationSchema.validateSyncAt(entry[0], row);
+          } catch (err) {
+            errors[row.id][entry[0]] = {
+              name: err.name,
+              errors: err.errors,
+            };
+          }
+        });
     });
     setValidationErrors((state) => ({ ...state, ...errors }));
   };
@@ -115,6 +117,7 @@ export default function Review({
         return {
           ...header,
           cellClassName: (params) => {
+            if (params.field === "id") return;
             if (
               validationErrors[params.id] &&
               validationErrors[params.id][params.field]
@@ -122,6 +125,16 @@ export default function Review({
               return "validation-error";
           },
           renderCell: (params) => {
+            if (params.field === "id")
+              return (
+                <Typography
+                  component="span"
+                  align="center"
+                  sx={{ width: "100%" }}
+                >
+                  {params.value}
+                </Typography>
+              );
             if (!validationErrors[params.id]) return;
             const err = validationErrors[params.id][params.field];
             if (err)
@@ -166,7 +179,7 @@ export default function Review({
       sx={{
         m: 2,
         mt: 3,
-        height: 400,
+        height: 525,
         "& .validation-error": {
           backgroundColor: "#ff97a0",
           color: "text.primary",
@@ -247,12 +260,11 @@ const getRowsWithHeaders = (rows, validHeaders, headers, ignoredColumns) => {
 };
 
 const orderHeaders = (validHeaders, rows) => {
-  return Object.keys(rows[0])
-    .filter((f) => f !== "id")
-    .map((field) => {
-      const { headerName, width, editable } = validHeaders.find(
-        (h) => h.field === field
-      );
-      return { field, headerName, width, editable };
-    });
+  return Object.keys(rows[0]).map((field) => {
+    const { headerName, width, editable } = validHeaders.find(
+      (h) => h.field === field
+    );
+    if (field === "id") return { field, width: 90 };
+    else return { field, headerName, width, editable };
+  });
 };

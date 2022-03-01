@@ -1,26 +1,25 @@
-import { Box } from "@mui/system";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import Button from "@mui/material/Button";
+import {
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  Stack,
+  Typography,
+  Autocomplete,
+  TextField,
+} from "@mui/material";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import DoneIcon from "@mui/icons-material/Done";
 import InfoIcon from "@mui/icons-material/Info";
 import WarningIcon from "@mui/icons-material/Warning";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-
-import { useDialog } from "../hooks/useDialog";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Stack, Typography } from "@mui/material";
 import {
   ignoreColumn,
   reconsiderColumn,
@@ -28,6 +27,7 @@ import {
   setHeader,
 } from "../actions";
 import { validationSchema } from "./validationSchema";
+import { useDialog } from "../hooks/useDialog";
 
 const hasHeader = true;
 
@@ -198,8 +198,7 @@ function TableComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentHeaderName]);
 
-  const handleHeaderChange = (e) => {
-    const value = e.target.value;
+  const handleHeaderChange = (e, value) => {
     setCurrentHeaderField(value);
     dispatch(setHeader(value, columnLabel));
   };
@@ -287,40 +286,20 @@ function TableComponent({
           <TableContainer
             component={Paper}
             key={currentHeaderName}
-            sx={{ width: 260 }}
+            sx={{ width: 480 }}
           >
             <Table aria-label="simple table">
               <TableHead>
-                <TableRow sx={{ "&>th": { pb: 1.5 } }}>
+                <TableRow sx={{ "&>th": { pb: 1.25 }, bgcolor: "grey.200" }}>
                   <TableCell>{columnLabel}</TableCell>
                   <TableCell>
-                    <FormControl fullWidth>
-                      <InputLabel id="demo-simple-select-label">
-                        Matching field
-                      </InputLabel>
-                      <Select
-                        labelId="demo-simple-select-label"
-                        id="demo-simple-select"
-                        value={currentHeaderName}
-                        name={columnLabel}
-                        label="Matching field"
-                        onChange={handleHeaderChange}
-                      >
-                        <MenuItem value="">
-                          <em>None</em>
-                        </MenuItem>
-                        {validHeaders
-                          .filter((c) => c.headerName)
-                          .map((column) => (
-                            <MenuItem
-                              value={column.headerName}
-                              key={column.field}
-                            >
-                              {column.headerName}
-                            </MenuItem>
-                          ))}
-                      </Select>
-                    </FormControl>
+                    <ColumnHeader
+                      row={rows[0]}
+                      validHeaders={validHeaders}
+                      columnLabel={columnLabel}
+                      currentHeaderName={currentHeaderName}
+                      handleHeaderChange={handleHeaderChange}
+                    />
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -331,13 +310,13 @@ function TableComponent({
                       key={idx}
                       sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                     >
-                      <TableCell width={20}>
+                      <TableCell width={20} sx={{ bgcolor: "grey.200" }}>
                         {idx + (hasHeader ? 2 : 1)}
                       </TableCell>
                       {row[columnLabel] ? (
                         <TableCell>{row[columnLabel]}</TableCell>
                       ) : (
-                        <TableCell sx={{ bgcolor: "grey.100" }}>
+                        <TableCell sx={{ bgcolor: "grey.50" }}>
                           <em>No Data</em>
                         </TableCell>
                       )}
@@ -456,6 +435,53 @@ function TableComponent({
           </Box>
         </>
       )}
+    </Stack>
+  );
+}
+
+function ColumnHeader({
+  row,
+  validHeaders,
+  columnLabel,
+  currentHeaderName,
+  handleHeaderChange,
+}) {
+  const column = row[columnLabel];
+
+  const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
+
+  return (
+    <Stack direction="row" sx={{ alignItems: "center" }}>
+      <Typography component="span" variant="body1" sx={{ minWidth: 94 }}>
+        {firstColumn}
+      </Typography>
+      <ArrowForwardIosIcon
+        sx={{ mx: 2.5, fontSize: "2rem", color: "#c5c5c5" }}
+      />
+      <Autocomplete
+        id="autocomplete"
+        autoHighlight
+        value={currentHeaderName}
+        options={validHeaders
+          .filter((v) => v.headerName)
+          .map((v) => v.headerName)}
+        onChange={handleHeaderChange}
+        fullWidth
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Lookup matching fields"
+            variant="standard"
+            sx={{
+              "& > .MuiInput-root:before, & > .MuiInput-root:after": {
+                content: "none",
+                borderBottom: 0,
+              },
+            }}
+          />
+        )}
+        sx={{ "& .MuiAutocomplete-clearIndicator": { visibility: "visible" } }}
+      />
     </Stack>
   );
 }

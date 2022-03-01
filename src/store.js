@@ -2,7 +2,7 @@ import { createStore } from "redux";
 import rootReducer from "./reducers";
 
 const columns: GridColDef[] = [
-  { field: "id", hide: true },
+  { field: "id" },
   { field: "name", headerName: "Full Name", width: 200, editable: true },
   { field: "email", headerName: "Email", width: 200, editable: true },
 ];
