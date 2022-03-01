@@ -448,7 +448,8 @@ function ColumnHeader({
 }) {
   const column = row[columnLabel];
 
-  const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
+  const firstColumn =
+    column.length < 12 ? column : String(column).slice(0, 12) + "...";
 
   const headers = validHeaders
     .filter((v) => v.headerName)
