@@ -450,6 +450,12 @@ function ColumnHeader({
 
   const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
 
+  const headers = validHeaders
+    .filter((v) => v.headerName)
+    .map((v) => v.headerName);
+
+  const options = [currentHeaderName, ...headers];
+
   return (
     <Stack direction="row" sx={{ alignItems: "center" }}>
       <Typography component="span" variant="body1" sx={{ minWidth: 94 }}>
@@ -461,12 +467,11 @@ function ColumnHeader({
       <Autocomplete
         id="autocomplete"
         autoHighlight
-        value={currentHeaderName}
-        options={validHeaders
-          .filter((v) => v.headerName)
-          .map((v) => v.headerName)}
-        onChange={handleHeaderChange}
         fullWidth
+        value={currentHeaderName}
+        options={options}
+        filterOptions={headers}
+        onChange={handleHeaderChange}
         renderInput={(params) => (
           <TextField
             {...params}
