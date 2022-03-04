@@ -115,6 +115,7 @@ export default function Match({
           <Box key={idx}>
             <TableComponent
               rows={hasHeader ? rows.slice(1) : rows}
+              headersRow={rows[0]}
               validHeaders={validHeaders}
               columnLabel={header.label}
               headerName={header.headerName}
@@ -145,6 +146,7 @@ export default function Match({
 
 function TableComponent({
   rows,
+  headersRow,
   validHeaders,
   headerName,
   columnLabel,
@@ -294,7 +296,7 @@ function TableComponent({
                   <TableCell>{columnLabel}</TableCell>
                   <TableCell>
                     <ColumnHeader
-                      row={rows[0]}
+                      headersRow={headersRow}
                       validHeaders={validHeaders}
                       columnLabel={columnLabel}
                       currentHeaderName={currentHeaderName}
@@ -440,7 +442,7 @@ function TableComponent({
 }
 
 function ColumnHeader({
-  row,
+  headersRow,
   validHeaders,
   columnLabel,
   currentHeaderName,
@@ -451,7 +453,7 @@ function ColumnHeader({
     .map((v) => v.headerName);
   const [options, setOptions] = useState(headers);
 
-  const column = String(row[columnLabel]);
+  const column = String(headersRow[columnLabel]);
   const firstColumn = column.length < 12 ? column : column.slice(0, 12) + "...";
 
   return (
