@@ -43,7 +43,7 @@ export default function Match({
   handleNext,
   handleBack,
   setBackClicked,
-  setNextEnabled,
+  setNextHidden,
 }) {
   const { rows, validHeaders, headers, ignoredColumns } = useSelector(
     ({ appReducer }) => appReducer
@@ -94,7 +94,7 @@ export default function Match({
 
   const handleConfirmBack = () => {
     dispatch(resetIgnoredColumns([]));
-    setNextEnabled(false);
+    setNextHidden(true);
     handleCloseBack();
     handleBack();
   };

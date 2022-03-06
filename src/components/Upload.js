@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Stack, Box, Divider, Button, Typography } from "@mui/material";
+import {
+  Stack,
+  Box,
+  Divider,
+  Button,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import * as XLSX from "xlsx";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,7 +17,7 @@ const Input = styled("input")({
   display: "none",
 });
 
-export default function Upload({ formId, handleNext, setNextEnabled }) {
+export default function Upload({ handleNext, setNextHidden }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const validHeaders = useSelector(({ appReducer }) => appReducer.validHeaders);
   const dispatch = useDispatch();
@@ -39,8 +46,7 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
     setSelectedFile(e.dataTransfer.files[0]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     const data = await selectedFile.arrayBuffer();
     let workbook = XLSX.read(data);
 
@@ -51,6 +57,7 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
     });
 
     if (selectedRows.length <= 1) {
+      setSelectedFile(null);
       handleClickOpen();
     } else {
       dispatch(setRows(selectedRows));
@@ -58,6 +65,7 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
       dispatch(setHeaders(headers));
       const ignoredColumns = getIgnoredColumns(headers);
       dispatch(setIgnoredColumns(ignoredColumns));
+      setNextHidden(false);
       handleNext();
     }
   };
@@ -93,8 +101,9 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
   };
 
   useEffect(() => {
-    if (selectedFile) setNextEnabled(true);
-  }, [selectedFile, setNextEnabled]);
+    if (selectedFile) handleSubmit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFile]);
 
   return (
     <Box
@@ -105,8 +114,6 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
         mt: 3,
       }}
       component="form"
-      id={formId}
-      onSubmit={handleSubmit}
     >
       <Stack
         onDrop={handleDrop}
@@ -123,24 +130,28 @@ export default function Upload({ formId, handleNext, setNextEnabled }) {
         }}
       >
         <Box sx={{ flex: "1 0 30%" }}>
-          <label htmlFor="contained-button-file" style={{ marginRight: 12 }}>
-            <Input
-              accept=".csv, text/plain, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-              id="contained-button-file"
-              type="file"
-              onChange={handleFileChange}
-            />
-            <Button
-              variant="contained"
-              component="span"
-              sx={{ textTransform: "initial" }}
-            >
-              Upload data from file
-            </Button>
-          </label>
+          {selectedFile ? (
+            <CircularProgress />
+          ) : (
+            <label htmlFor="contained-button-file" style={{ marginRight: 12 }}>
+              <Input
+                accept=".csv, text/plain, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                id="contained-button-file"
+                type="file"
+                onChange={handleFileChange}
+              />
+              <Button
+                variant="contained"
+                component="span"
+                sx={{ textTransform: "initial" }}
+              >
+                Upload data from file
+              </Button>
+            </label>
+          )}
           <Typography variant="body2" sx={{ color: "text.primary", mt: 1.25 }}>
             {selectedFile
-              ? `"${selectedFile?.name}" selected.`
+              ? `"${selectedFile?.name}" uploading...`
               : ".csv, .tsv, .txt spreadsheets accepted."}
           </Typography>
         </Box>

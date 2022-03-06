@@ -39,7 +39,7 @@ function StepIcon(props) {
 export default function StepperComponent({ steps }) {
   const [activeStep, setActiveStep] = useState(0);
 
-  const [nextEnabled, setNextEnabled] = useState(false);
+  const [nextHidden, setNextHidden] = useState(true);
   const [backClicked, setBackClicked] = useState(false);
 
   const handleNext = () => {
@@ -83,32 +83,28 @@ export default function StepperComponent({ steps }) {
       </Stack>
       <StepComponent
         formId={formId}
-        nextEnabled={nextEnabled}
         backClicked={backClicked}
-        setNextEnabled={setNextEnabled}
+        setNextHidden={setNextHidden}
         setBackClicked={setBackClicked}
         handleNext={handleNext}
         handleBack={handleBack}
       />
-      <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
-        <Button
-          color="inherit"
-          disabled={activeStep === 0}
-          onClick={() => setBackClicked(true)}
-          sx={{ mr: 1 }}
-        >
-          Back
-        </Button>
-        <Box sx={{ flex: "1 1 auto" }} />
-        <Button
-          variant="contained"
-          disabled={!nextEnabled}
-          form={formId}
-          type="submit"
-        >
-          {activeStep === steps.length - 1 ? "Finish" : "Next"}
-        </Button>
-      </Box>
+      {!nextHidden && (
+        <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
+          <Button
+            color="inherit"
+            disabled={activeStep === 0}
+            onClick={() => setBackClicked(true)}
+            sx={{ mr: 1 }}
+          >
+            Back
+          </Button>
+          <Box sx={{ flex: "1 1 auto" }} />
+          <Button variant="contained" form={formId} type="submit">
+            {activeStep === steps.length - 1 ? "Finish" : "Next"}
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }
