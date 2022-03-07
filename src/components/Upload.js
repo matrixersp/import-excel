@@ -19,12 +19,18 @@ const Input = styled("input")({
 
 export default function Upload({ handleNext, setNextHidden }) {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const validHeaders = useSelector(({ appReducer }) => appReducer.validHeaders);
   const dispatch = useDispatch();
   const { handleClickOpen, AlertDialog } = useDialog();
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+  const handleFileChange = (e) => {
+    uploadFile(e.target.files[0]);
+  };
+
+  const uploadFile = (file) => {
+    setLoading(true);
+    setTimeout(() => setSelectedFile(file), 700);
   };
 
   const handleDragOver = (e) => {
@@ -43,7 +49,7 @@ export default function Upload({ handleNext, setNextHidden }) {
     e.stopPropagation();
     e.preventDefault();
     e.target.classList.remove("dragging");
-    setSelectedFile(e.dataTransfer.files[0]);
+    uploadFile(e.dataTransfer.files[0]);
   };
 
   const handleSubmit = async () => {
@@ -130,7 +136,7 @@ export default function Upload({ handleNext, setNextHidden }) {
         }}
       >
         <Box sx={{ flex: "1 0 30%" }}>
-          {selectedFile ? (
+          {loading ? (
             <CircularProgress />
           ) : (
             <label htmlFor="contained-button-file" style={{ marginRight: 12 }}>
