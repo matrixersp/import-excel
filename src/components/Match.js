@@ -69,7 +69,7 @@ export default function Match({
     return headers.filter((h) => !ignoredColumns.includes(h.label));
   }, [headers, ignoredColumns]);
 
-  const foundDuplicates = () => {
+  const findDuplicates = () => {
     const headerNames = nonIgnoredHeaders
       .map((h) => h.headerName)
       .filter((h) => h);
@@ -77,16 +77,16 @@ export default function Match({
     return uniqueHeaderNames.size !== headerNames.length;
   };
 
-  const foundMatchedHeaders = () => {
+  const findMatchedHeaders = () => {
     return nonIgnoredHeaders.filter((h) => h.headerName).length > 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (foundDuplicates()) {
+    if (findDuplicates()) {
       setDialogTitle(dialogTitles.FOUND_DUPLICATE_HEADERS);
       handleClickOpenNext();
-    } else if (!foundMatchedHeaders()) {
+    } else if (!findMatchedHeaders()) {
       setDialogTitle(dialogTitles.NO_MATCHED_HEADERS_FOUND);
       handleClickOpenNext();
     } else handleNext();
@@ -97,6 +97,18 @@ export default function Match({
     setNextHidden(true);
     handleCloseBack();
     handleBack();
+  };
+
+  const getDuplicateHeaders = (label) => {
+    const headers = nonIgnoredHeaders.reduce((acc, header) => {
+      const { label, headerName } = header;
+      return { ...acc, [label]: headerName };
+    }, {});
+    return nonIgnoredHeaders
+      .filter((header) => {
+        return header.label !== label && header.headerName === headers[label];
+      })
+      .map((header) => rows[0][header.label]);
   };
 
   return (
@@ -117,12 +129,11 @@ export default function Match({
               rows={hasHeader ? rows.slice(1) : rows}
               headersRow={rows[0]}
               validHeaders={validHeaders}
-              columnLabel={header.label}
               headerName={header.headerName}
+              columnLabel={header.label}
               ignoredColumns={ignoredColumns}
-              idx={idx}
-              validationSchema={validationSchema}
               headers={headers}
+              duplicateHeaders={getDuplicateHeaders(header.label)}
             />
           </Box>
         );
@@ -151,10 +162,10 @@ function TableComponent({
   headerName,
   columnLabel,
   ignoredColumns,
-  idx,
   headers,
+  duplicateHeaders,
 }) {
-  const [currentHeaderName, setCurrentHeaderField] = useState(headerName || "");
+  const [currentHeaderName, setCurrentHeaderName] = useState(headerName || "");
   const [emptyRowsRatio, setEmptyRowsRatio] = useState(0);
   const [nonValidRowsRatio, setNonValidRowsRatio] = useState(0);
   const isIgnoredColumn = ignoredColumns.includes(columnLabel);
@@ -201,7 +212,7 @@ function TableComponent({
   }, [currentHeaderName]);
 
   const handleHeaderChange = (e, value) => {
-    setCurrentHeaderField(value);
+    setCurrentHeaderName(value);
     dispatch(setHeader(value, columnLabel));
   };
 
@@ -410,7 +421,10 @@ function TableComponent({
                   }}
                 >
                   <WarningIcon sx={{ color: "warning.light", mr: 1 }} />
-                  {headerName} has already been matched.
+                  {duplicateHeaders.length === 1
+                    ? duplicateHeaders + " has "
+                    : duplicateHeaders.join(", ") + " have "}
+                  already been matched to {headersRow[columnLabel]}.
                 </Typography>
               )}
             </Box>
