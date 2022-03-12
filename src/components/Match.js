@@ -33,7 +33,7 @@ const hasHeader = true;
 
 const dialogTitles = {
   FOUND_DUPLICATE_HEADERS:
-    "Sorry, some columns are matched to duplicate fields",
+    "Sorry, several columns are matched to duplicate fields: ",
   NO_MATCHED_HEADERS_FOUND: "Sorry, there are no matched fields",
 };
 
@@ -81,10 +81,20 @@ export default function Match({
     return nonIgnoredHeaders.filter((h) => h.headerName).length > 0;
   };
 
+  const getDuplicateHeadersText = () => {
+    return headers
+      .filter((header) => getDuplicateHeaders(header.label).length > 0)
+      .map((header) => rows[0][header.label])
+      .join(", ")
+      .replace(/,(?=[^,]+$)/, " and ");
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (findDuplicates()) {
-      setDialogTitle(dialogTitles.FOUND_DUPLICATE_HEADERS);
+      setDialogTitle(
+        dialogTitles.FOUND_DUPLICATE_HEADERS + getDuplicateHeadersText()
+      );
       handleClickOpenNext();
     } else if (!findMatchedHeaders()) {
       setDialogTitle(dialogTitles.NO_MATCHED_HEADERS_FOUND);
@@ -104,10 +114,14 @@ export default function Match({
       const { label, headerName } = header;
       return { ...acc, [label]: headerName };
     }, {});
+
     return nonIgnoredHeaders
-      .filter((header) => {
-        return header.label !== label && header.headerName === headers[label];
-      })
+      .filter(
+        (header) =>
+          header.headerName &&
+          header.label !== label &&
+          header.headerName === headers[label]
+      )
       .map((header) => rows[0][header.label]);
   };
 
@@ -127,12 +141,10 @@ export default function Match({
           <Box key={idx}>
             <TableComponent
               rows={hasHeader ? rows.slice(1) : rows}
-              headersRow={rows[0]}
               validHeaders={validHeaders}
               headerName={header.headerName}
               columnLabel={header.label}
               ignoredColumns={ignoredColumns}
-              headers={headers}
               duplicateHeaders={getDuplicateHeaders(header.label)}
             />
           </Box>
@@ -157,12 +169,10 @@ export default function Match({
 
 function TableComponent({
   rows,
-  headersRow,
   validHeaders,
   headerName,
   columnLabel,
   ignoredColumns,
-  headers,
   duplicateHeaders,
 }) {
   const [currentHeaderName, setCurrentHeaderName] = useState(headerName || "");
@@ -230,14 +240,14 @@ function TableComponent({
     setIsEditing(true);
   };
 
-  const isDuplicateHeaderName = useMemo(() => {
-    const filtered = headers.filter(
-      (header) => !ignoredColumns.includes(header.label)
-    );
-    return (
-      filtered.filter((h) => h.headerName === currentHeaderName).length > 1
-    );
-  }, [headers, ignoredColumns, currentHeaderName]);
+  const isDuplicateHeaderName = useMemo(
+    () => duplicateHeaders.length > 0,
+    [duplicateHeaders]
+  );
+
+  const matchedHeadersText = duplicateHeaders
+    .join(", ")
+    .replace(/,(?=[^,]+$)/, " and ");
 
   return (
     <Stack
@@ -307,7 +317,6 @@ function TableComponent({
                   <TableCell>{columnLabel}</TableCell>
                   <TableCell>
                     <ColumnHeader
-                      headersRow={headersRow}
                       validHeaders={validHeaders}
                       columnLabel={columnLabel}
                       currentHeaderName={currentHeaderName}
@@ -422,9 +431,9 @@ function TableComponent({
                 >
                   <WarningIcon sx={{ color: "warning.light", mr: 1 }} />
                   {duplicateHeaders.length === 1
-                    ? duplicateHeaders + " has "
-                    : duplicateHeaders.join(", ") + " have "}
-                  already been matched to {headersRow[columnLabel]}.
+                    ? matchedHeadersText + " has "
+                    : matchedHeadersText + " have "}
+                  already been matched to {currentHeaderName}.
                 </Typography>
               )}
             </Box>
@@ -456,12 +465,12 @@ function TableComponent({
 }
 
 function ColumnHeader({
-  headersRow,
   validHeaders,
   columnLabel,
   currentHeaderName,
   handleHeaderChange,
 }) {
+  const headersRow = useSelector((state) => state.appReducer.rows[0]);
   const headers = validHeaders
     .filter((v) => v.headerName)
     .map((v) => v.headerName);

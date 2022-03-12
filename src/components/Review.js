@@ -2,8 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Box, Card, CardHeader, Button, Typography } from "@mui/material";
 import Tooltip, { tooltipClasses } from "@mui/material/Tooltip";
 import { styled } from "@mui/material/styles";
-import { DataGrid } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
+import { StyledDataGrid } from "./StyledDataGrid";
 import { setGridRows, setGridColumns, updateEditedGridRows } from "../actions";
 import { validationSchema } from "./validationSchema";
 import { useDialog } from "../hooks/useDialog";
@@ -116,6 +116,9 @@ export default function Review({
       gridColumns?.map((header) => {
         return {
           ...header,
+          renderHeader: (params) => {
+            if (params.field === "id") return <div />;
+          },
           cellClassName: (params) => {
             if (params.field === "id") return;
             if (
@@ -127,12 +130,8 @@ export default function Review({
           renderCell: (params) => {
             if (params.field === "id")
               return (
-                <Typography
-                  component="span"
-                  align="center"
-                  sx={{ width: "100%" }}
-                >
-                  {params.value}
+                <Typography component="span" sx={{ width: "100%" }}>
+                  {+params.value + 1}
                 </Typography>
               );
             if (!validationErrors[params.id]) return;
@@ -189,7 +188,7 @@ export default function Review({
       id={formId}
       onSubmit={handleSubmit}
     >
-      <DataGrid
+      <StyledDataGrid
         rows={currentRows}
         columns={getValidColumns}
         pageSize={pageSize}

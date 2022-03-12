@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Box, Card, CardHeader, Button, Typography } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
 import { useDialog } from "../hooks/useDialog";
+import { StyledDataGrid } from "./StyledDataGrid";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -28,15 +28,14 @@ export default function Complete({ backClicked, handleBack, setBackClicked }) {
       gridColumns.map((column) => ({
         ...column,
         editable: false,
+        renderHeader: (params) => {
+          if (params.field === "id") return <div />;
+        },
         renderCell: (params) => {
           if (params.field === "id")
             return (
-              <Typography
-                component="span"
-                align="center"
-                sx={{ width: "100%" }}
-              >
-                {params.value}
+              <Typography component="span" sx={{ width: "100%" }}>
+                {+params.value + 1}
               </Typography>
             );
         },
@@ -57,7 +56,7 @@ export default function Complete({ backClicked, handleBack, setBackClicked }) {
         },
       }}
     >
-      <DataGrid
+      <StyledDataGrid
         rows={gridRows}
         columns={getGridColumns}
         pageSize={pageSize}
