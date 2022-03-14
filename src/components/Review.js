@@ -38,6 +38,7 @@ export default function Review({
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentRows, setCurrentRows] = useState([]);
+  const [cellWidth, setCellWidth] = useState(0);
 
   const saveEditedGridRows = () => {
     dispatch(updateEditedGridRows(editedRows));
@@ -189,6 +190,16 @@ export default function Review({
       onSubmit={handleSubmit}
     >
       <StyledDataGrid
+        sx={{
+          "& .MuiDataGrid-cell--editing": {
+            maxWidth: "initial!important",
+            width: "initial!important",
+          },
+          "& .MuiInputBase-input": {
+            minWidth: "initial",
+            width: cellWidth,
+          },
+        }}
         rows={currentRows}
         columns={getValidColumns}
         pageSize={pageSize}
@@ -196,6 +207,32 @@ export default function Review({
         onPageSizeChange={(size) => setPageSize(size)}
         onPageChange={(page) => setPage(page)}
         rowHeight={40}
+        onCellEditStart={(params) => {
+          const el = document.createElement("span");
+          el.setAttribute("id", "editing-cell-id");
+
+          const text = document.createTextNode(params.value);
+          el.appendChild(text);
+
+          const root = document.getElementById("root");
+          root.append(el);
+
+          const paddingsWidth = 34;
+          const currentWidth = params.colDef?.width - paddingsWidth;
+          let width;
+          if (currentWidth > el.offsetWidth) width = currentWidth + "px";
+          else if (el.offsetWidth < 500) width = el.offsetWidth + 8 + "px";
+          else width = "508px";
+
+          setCellWidth(width);
+          el.style.display = "none";
+        }}
+        onCellEditStop={(params) => {
+          const el = document.getElementById("editing-cell-id");
+          if (el.parentNode) {
+            el.parentNode.removeChild(el);
+          }
+        }}
         onCellEditCommit={(cell) => {
           const idx = currentRows.findIndex((row) => row.id === cell.id);
           currentRows[idx][cell.field] = cell.value;
