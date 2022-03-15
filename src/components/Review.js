@@ -210,6 +210,8 @@ export default function Review({
         onCellEditStart={(params) => {
           const el = document.createElement("span");
           el.setAttribute("id", "editing-cell-id");
+          el.style.fontFamily = '"Roboto", "Helvetica", "Arial", sans-serif';
+          el.style.fontSize = "0.875rem";
 
           const text = document.createTextNode(params.value);
           el.appendChild(text);
@@ -217,21 +219,15 @@ export default function Review({
           const root = document.getElementById("root");
           root.append(el);
 
-          const paddingsWidth = 34;
-          const currentWidth = params.colDef?.width - paddingsWidth;
+          const paddings = 34;
+          const currentWidth = params.colDef?.width - paddings;
           let width;
           if (currentWidth > el.offsetWidth) width = currentWidth + "px";
           else if (el.offsetWidth < 500) width = el.offsetWidth + 8 + "px";
           else width = "508px";
 
           setCellWidth(width);
-          el.style.display = "none";
-        }}
-        onCellEditStop={(params) => {
-          const el = document.getElementById("editing-cell-id");
-          if (el.parentNode) {
-            el.parentNode.removeChild(el);
-          }
+          el.parentNode.removeChild(el);
         }}
         onCellEditCommit={(cell) => {
           const idx = currentRows.findIndex((row) => row.id === cell.id);

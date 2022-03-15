@@ -5,8 +5,3 @@ body {
 .dragging {
   background-color: #e5e5e5;
 }
-
-#editing-cell-id {
-  font-family : "Roboto", "Helvetica", "Arial", sans-serif;
-  font-size : 0.875rem;
-}
